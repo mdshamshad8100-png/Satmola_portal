@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Satmola BP Quick Directory</title>
+  <style>
+    :root {
+      --rd: #d91f2f;
+      --gd: #f5a30a;
+      --bg: #fdfaf7;
+      --cd: #ffffff;
+      --tx: #2a1a1a;
+      --mu: #7a6a60;
+      --ln: #ece3cc;
+      --gr: #0a8f63;
+      --bl: #2563eb;
+      --porter: #1062eb;
+      --porter-dark: #094bb9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--tx);
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 12px;
+      max-width: 500px;
+      margin-inline: auto;
+    }
+    .hd {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--ln);
+    }
+    .logo {
+      background: linear-gradient(#e8283a, #b8101f);
+      border: 2px solid var(--gd);
+      border-radius: 10px;
+      color: #fff;
+      padding: 5px 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .logo small { display: block; font-size: 8px; color: #ffe6a0; }
+    h1 { font-size: 16px; margin: 0; color: var(--rd); line-height: 1.2; }
+    h1 small { display: block; font-size: 11px; color: var(--mu); font-weight: 500; }
+
+    .card {
+      background: var(--cd);
+      border: 1px solid var(--ln);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      margin-bottom: 12px;
+    }
+    input[type=search] {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid var(--ln);
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+    }
+    input[type=search]:focus { border-color: var(--rd); }
+
+    .res {
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+    .res-item {
+      padding: 10px;
+      border-bottom: 1px solid var(--ln);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .res-item:active { background: #fff5ea; }
+    .res-item b { font-size: 13px; color: var(--tx); display: block; }
+    .res-item small { font-size: 11px; color: var(--mu); }
+
+    .details-card {
+      display: none;
+      background: #fff;
+      border: 1.5px solid #f6dd8f;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .party-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--rd);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .info-row {
+      display: flex;
+      font-size: 13px;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .info-lbl {
+      width: 110px;
+      color: var(--mu);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .info-val {
+      color: var(--tx);
+      font-weight: 500;
+      word-break: break-word;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .tag.gps { background: #e8fbf1; border: 1px solid #8fe0b8; color: #0a7a4d; }
+    .tag.approx { background: #fdf3d8; border: 1px solid #f6dd8f; color: #8a6500; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 8px;
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      touch-action: manipulation;
+    }
+    .btn-wa {
+      grid-column: span 2;
+      background: #25d366;
+      color: #fff;
+      font-size: 15px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(37,211,102,0.3);
+    }
+    .btn-porter {
+      grid-column: span 2;
+      background: linear-gradient(135deg, #0d57d4, #1877f2);
+      color: #fff;
+      font-size: 15px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(16, 98, 235, 0.35);
+      border: 1px solid #2563eb;
+    }
+    .btn-porter:active {
+      background: #094bb9;
+    }
+    .btn-map { background: var(--bl); color: #fff; }
+    .btn-call-party { background: #f0f3f6; color: var(--tx); border: 1px solid #ccd; }
+    .btn-call-rep {
+      grid-column: span 2;
+      background: #fff8eb;
+      color: #b45309;
+      border: 1.5px solid #f6dd8f;
+      font-size: 13.5px;
+      padding: 12px;
+    }
+    .btn-call-rep:active { background: #fef3c7; }
+
+    /* Modal Styling for Porter Booking */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.65);
+      backdrop-filter: blur(3px);
+      z-index: 1000;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-sheet {
+      background: #ffffff;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 18px 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+      animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1.5px solid var(--ln);
+    }
+    .modal-hdr h2 {
+      margin: 0;
+      font-size: 17px;
+      color: #1062eb;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .modal-close {
+      background: #f1f3f5;
+      border: 0;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #555;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .porter-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+    .porter-card-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .drop-banner {
+      background: #eff6ff;
+      border-left: 4px solid #1062eb;
+    }
+    .drop-banner .porter-card-title {
+      color: #1d4ed8;
+    }
+    .pickup-banner {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+    }
+    .pickup-banner .porter-card-title {
+      color: #15803d;
+    }
+    .input-grp {
+      margin-bottom: 10px;
+    }
+    .input-grp label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    .input-grp input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #ffffff;
+      outline: none;
+    }
+    .input-grp input:focus {
+      border-color: #1062eb;
+    }
+    .btn-current-loc {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-top: 5px;
+      cursor: pointer;
+      width: auto;
+      display: inline-flex;
+    }
+    .btn-confirm-porter {
+      width: 100%;
+      background: linear-gradient(135deg, #1062eb, #094bb9);
+      color: #fff;
+      font-size: 15px;
+      padding: 14px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(16, 98, 235, 0.4);
+      margin-top: 8px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: rgba(25, 25, 25, 0.95);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      max-width: 90%;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 999;
+    }
+    .toast.on {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-5px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hd">
+    <div class="logo">SATMOLA<small>LOGISTICS</small></div>
+    <h1>Party Lookup &amp; Share<small>Quick Search &amp; Contact Forward</small></h1>
+  </div>
+
+  <div class="card">
+    <input type="search" id="q" placeholder="Type Party / BP Name, City, or Block...">
+    <div class="res" id="res"></div>
+
+    <div class="details-card" id="detCard">
+      <div class="party-title" id="dName"></div>
+      <div class="info-row"><span class="info-lbl">Sales Rep:</span><span class="info-val" id="dRep"></span></div>
+      <div class="info-row"><span class="info-lbl">Area / City:</span><span class="info-val" id="dCity"></span></div>
+      <div class="info-row"><span class="info-lbl">Bill-to Block:</span><span class="info-val" id="dBlock"></span></div>
+      <div class="info-row"><span class="info-lbl">Party Mobile:</span><span class="info-val" id="dMob"></span></div>
+      <div class="info-row"><span class="info-lbl">Location Status:</span><span class="info-val" id="dLocTag"></span></div>
+
+      <div class="actions">
+        <!-- 🚚 Direct Book Porter Button -->
+        <button class="btn-porter" id="btnPorter">🚚 Book Porter</button>
+        <button class="btn-wa" id="btnWa">💬 Share Details on WhatsApp</button>
+        <button class="btn-call-rep" id="btnCallRep">📞 Call Sales Executive (<span id="repNameShort">Rep</span>)</button>
+        <button class="btn-map" id="btnMap">🗺️ Open Map</button>
+        <button class="btn-call-party" id="btnCallParty">📞 Call Party</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // =========================================================================
+    // 🔴🔴🔴 SALES EXECUTIVE PHONE DIRECTORY (YAHAN NUMBER UPDATE KAREIN) 🔴🔴🔴
+    // =========================================================================
+    // 👉 Format: "SALES REP NAME": "PHONE NUMBER",
+    // 👉 Quotes ("") ke andar phone number daal kar file save karein.
+    // =========================================================================
+
+    var REP_PHONES = {
+      "SUMAN P.":       "9899996180",  // 👈 Suman P.
+      "Amit Mishra":    "9310775300",  // 👈 Amit Mishra
+      "PUSHKAR S.":     "8475058000",  // 👈 Pushkar S.
+      "TARUN KUMAR":    "9971719926",  // 👈 Tarun Kumar
+      "AMRENDRA KUMAR": "9717444940",  // 👈 Amrendra Kumar
+      "RASHID":         "",            // 👈 Rashid
+      "KUNDAN":         "",            // 👈 Kundan
+      "Dileep Nigam":   "8010969742",  // 👈 Dileep Nigam
+      "SHAMIM":         "",            // 👈 Shamim
+      "VIVEK MITTAL":   ""             // 👈 Vivek Mittal
+    };
+
+    // =========================================================================
+    // 🟢 END OF CONTACT DIRECTORY
+    // =========================================================================
+
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZX032zbv9PpgHzqRxtC2slN3bPrPOcypFxOVrsCkdq3F5_AAzZgXAUveQHIwHtzQ1gA/exec";
+    var BPS = [];
+
+    function fetchLiveBps() {
+      toast("Syncing live BP Master...", 2000);
+      fetch(SCRIPT_URL)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (!Array.isArray(data) || data.length === 0) return;
+          BPS = data.map(function(r) {
+            return [
+              r["BP Name"] || "",
+              r["City Name"] || r["Ship-to City"] || "",
+              r["Bill-to Block"] || "",
+              r["Sales Employee"] || "",
+              r["GRoup"] || "",
+              r["State"] || "",
+              r["Mobile"] || "",
+              r["Lat"] || "",
+              r["Lng"] || ""
+            ];
+          }).filter(function(b) { return b[0]; });
+          toast("● " + BPS.length + " Parties Loaded Live!", 2200);
+        })
+        .catch(function(err) {
+          console.error("Live fetch error:", err);
+        });
+    }
+    window.addEventListener("DOMContentLoaded", fetchLiveBps);
+
+
+    var curBp = null;
+    var $ = function(id) { return document.getElementById(id); };
+
+    function toast(m, duration) {
+      var t = $("toast"); 
+      t.textContent = m; 
+      t.className = "toast on";
+      setTimeout(function(){ t.className = "toast"; }, duration || 2400);
+    }
+
+    // Reliable fallback clipboard copier that works inside iframes and mobile webviews
+    function copyTextToClipboard(textToCopy) {
+      var success = false;
+      try {
+        var textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.top = "-9999px";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        success = document.execCommand("copy");
+        document.body.removeChild(textArea);
+      } catch (err) {
+        success = false;
+      }
+      return success;
+    }
+
+    // Helper to get reliable location map URL
+    function getMapUrl(bp) {
+      if (!bp) return "";
+      if (bp.hasGps) {
+        return "https://www.google.com/maps/search/?api=1&query=" + bp.lat + "," + bp.lng;
+      }
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(bp.name + " " + bp.block + " " + bp.city);
+    }
+
+    // Search logic
+    $("q").oninput = function() {
+      var q = this.value.trim().toLowerCase();
+      var res = $("res");
+      if (!q) { res.innerHTML = ""; return; }
+
+      var matches = [];
+      for (var i = 0; i < BPS.length; i++) {
+        var b = BPS[i];
+        var text = (b[0] + " " + b[1] + " " + b[2] + " " + b[3]).toLowerCase();
+        if (text.indexOf(q) > -1) matches.push({ idx: i, data: b });
+        if (matches.length >= 8) break;
+      }
+
+      res.innerHTML = matches.map(function(m) {
+        return "<div class='res-item' data-idx='" + m.idx + "'>" +
+               "<div><b>" + m.data[0] + "</b><small>" + m.data[1] + " · " + m.data[2] + "</small></div>" +
+               "<span style='color:var(--rd);font-weight:700;'>Select ➔</span>" +
+               "</div>";
+      }).join("") || "<div style='padding:10px;color:var(--mu);font-size:12px;'>No matching parties found</div>";
+    };
+
+    // Card Details Display
+    $("res").onclick = function(e) {
+      var item = e.target.closest("[data-idx]");
+      if (!item) return;
+      var b = BPS[+item.dataset.idx];
+      var rep = b[3] || "N/A";
+      var repPhone = REP_PHONES[rep] || "";
+
+      curBp = {
+        name: b[0],
+        city: b[1],
+        block: b[2],
+        rep: rep,
+        repPhone: repPhone,
+        mob: b[6] || "",
+        lat: b[7],
+        lng: b[8],
+        hasGps: !!(b[7] && b[8])
+      };
+
+      $("q").value = curBp.name;
+      $("res").innerHTML = "";
+
+      $("dName").textContent = curBp.name;
+      $("dRep").textContent = curBp.rep + (curBp.repPhone ? " (📞 " + curBp.repPhone + ")" : "");
+      $("dCity").textContent = curBp.city;
+      $("dBlock").textContent = curBp.block;
+      $("dMob").textContent = curBp.mob ? curBp.mob : "Not Available";
+      $("repNameShort").textContent = curBp.rep;
+      
+      if (curBp.hasGps) {
+        $("dLocTag").innerHTML = "<span class='tag gps'>🟢 Verified Live GPS</span>";
+      } else {
+        $("dLocTag").innerHTML = "<span class='tag approx'>🟡 Approximate Area</span>";
+      }
+
+      $("detCard").style.display = "block";
+    };
+
+    // 🚚 Single-Click Instant Porter Launch (Like WhatsApp)
+    $("btnPorter").onclick = function() {
+      if (!curBp) return toast("Pehle party select karein!");
+
+      toast("Opening Porter...", 1500);
+
+      // Encode destination query using verified GPS coordinates or exact store name & area
+      var dropQuery = curBp.hasGps 
+        ? (curBp.lat + "," + curBp.lng) 
+        : encodeURIComponent(curBp.name + ", " + curBp.block + ", " + curBp.city);
+
+      var isAndroid = /android/i.test(navigator.userAgent);
+      var porterWeb = "https://porter.in/book?drop=" + dropQuery;
+      var porterAppUrl = "intent://porter.in/book?drop=" + dropQuery + "#Intent;scheme=https;package=com.theporter.android.customerapp;end";
+
+      if (isAndroid) {
+        // Direct intent launch for Porter on Android with seamless fallback
+        window.location.href = porterAppUrl;
+        setTimeout(function() {
+          window.location.href = porterWeb;
+        }, 1200);
+      } else {
+        // iOS / Mobile Browser direct launch
+        window.location.href = "porter://book?drop=" + dropQuery;
+        setTimeout(function() {
+          window.location.href = porterWeb;
+        }, 1200);
+      }
+    };
+
+    // WhatsApp Action
+    $("btnWa").onclick = function() {
+      if (!curBp) return;
+      var mapLink = getMapUrl(curBp);
+
+      var text = "🚚 *SATMOLA PARTY DETAILS*\n" +
+                 "━━━━━━━━━━━━━━━━━━\n" +
+                 "🏬 *Party:* " + curBp.name + "\n" +
+                 "👤 *Rep:* " + curBp.rep + (curBp.repPhone ? " (" + curBp.repPhone + ")" : "") + "\n" +
+                 "📍 *Address:* " + curBp.block + ", " + curBp.city + "\n" +
+                 (curBp.mob ? "📞 *Party Mobile:* " + curBp.mob + "\n" : "") +
+                 "🗺️ *Location:* " + mapLink;
+
+      window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+    };
+
+    // Call Sales Rep
+    $("btnCallRep").onclick = function() {
+      if (!curBp) return;
+      if (!curBp.repPhone) {
+        return toast("Contact number for " + curBp.rep + " is not configured.");
+      }
+      window.location.href = "tel:" + curBp.repPhone.trim();
+    };
+
+    // Open Maps
+    $("btnMap").onclick = function() {
+      if (!curBp) return;
+      var mapLink = getMapUrl(curBp);
+      window.open(mapLink, "_blank");
+    };
+
+    // Call Party
+    $("btnCallParty").onclick = function() {
+      if (!curBp || !curBp.mob) return toast("Party mobile number not available");
+      window.location.href = "tel:" + curBp.mob.split(",")[0].trim();
+    };
+  </script>
+</body>
+</html>

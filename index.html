@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Satmola Logistics &amp; Delhi NCR Routing Hub</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#fff;--cd:rgba(255,255,255,.82);--tx:#2a1a1a;--mu:#7a6a60;--bd:#f6dd8f;--rd:#d91f2f;--gd:#f5a30a;--gr:#0a8f63;--bl:#2563eb;--ln:#ece3cc}
+
+:root[data-theme="dark"]{--bg:#1a1413;--cd:#241c1b;--tx:#f5ebe6;--mu:#b8a89f;--bd:#6b5518;--ln:#3a2e2c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:10px;max-width:1280px;margin-inline:auto}
+.hd{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.logo{background:linear-gradient(#e8283a,#b8101f);border:3px solid var(--gd);border-radius:12px;color:#fff;text-align:center;padding:6px 14px;font-weight:900;letter-spacing:2px;line-height:1.1}
+.logo small{display:block;font-size:8px;letter-spacing:1px;color:#ffe6a0}
+h1{font-size:18px;color:var(--rd);margin:0;flex:1 1 220px}
+h1 small{display:block;font-size:11px;color:var(--mu);font-weight:500}
+.pill{display:flex;gap:4px;padding:4px;border:1px solid var(--bd);border-radius:12px;background:var(--cd)}
+button{border:0;border-radius:8px;padding:7px 11px;font:inherit;font-weight:700;cursor:pointer;background:var(--rd);color:#fff}
+button.o{background:var(--cd);color:var(--tx);border:1px solid var(--bd)}
+button.on{background:var(--rd);color:#fff;border-color:var(--rd)}
+button.g{background:var(--gr)}button.b{background:var(--bl)}button.y{background:var(--gd);color:#3b2600}
+button:disabled{opacity:.45;cursor:default}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.st{background:var(--cd);border:1px solid var(--bd);border-top:4px solid var(--rd);border-radius:12px;padding:8px 10px}
+.st span{font-size:10px;letter-spacing:1px;color:var(--mu);font-weight:700}.st b{display:block;font-size:20px;color:var(--rd)}.st i{font-style:normal;font-size:11px;color:var(--mu)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-bottom:10px;overflow:auto}
+.tab{background:none;color:var(--mu);border-radius:0;border-bottom:3px solid transparent}.tab.on{color:var(--rd);border-bottom-color:var(--rd);background:none}
+.cd{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:10px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+input[type=text],input[type=search],textarea{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:9px;font:inherit}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.res{max-height:180px;overflow:auto;margin-top:6px}
+.sr{display:flex;gap:6px;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--ln)}
+.sr div{min-width:0;overflow-wrap:anywhere}.sr small{color:var(--mu);display:block}
+.stop{display:flex;gap:8px;align-items:center;padding:8px;border:1px solid var(--ln);border-left:4px solid var(--rd);border-radius:10px;margin-top:6px;cursor:pointer}
+.stop.sel{background:rgba(245,163,10,.15)}
+.num{background:var(--rd);color:#fff;border-radius:7px;min-width:24px;height:24px;display:grid;place-items:center;font-weight:800;font-size:12px}
+.stop .t{flex:1;min-width:0;font-weight:700;overflow-wrap:anywhere}.stop .t small{display:block;color:var(--mu);font-weight:500}
+.stop button{padding:3px 7px;background:none;color:var(--mu);border:1px solid var(--ln)}
+.map{position:relative;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:#f4efe0}
+.map svg{display:block;width:100%;height:340px}.map.big svg{height:560px}
+.ban{position:absolute;left:8px;top:8px;background:#5a1f1f;color:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px;max-width:80%}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;border:1px solid var(--bd);background:rgba(245,163,10,.15);margin:2px 3px 0 0}
+table{width:100%;border-collapse:collapse}th{font-size:11px;letter-spacing:.5px;color:var(--rd);text-align:left;background:rgba(217,31,47,.07)}
+th,td{padding:8px;border-bottom:1px solid var(--ln);vertical-align:top}td.r,th.r{text-align:right}.wrap{overflow-x:auto}
+.km{color:var(--rd);font-weight:800}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:99px;opacity:0;transition:.2s;pointer-events:none;z-index:9}.toast.on{opacity:1}
+.mu{color:var(--mu);font-size:12px}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body::before{content:"SATMOLA";position:fixed;inset:0;display:grid;place-items:center;font-size:min(20vw,230px);font-weight:900;letter-spacing:.06em;color:rgba(217,31,47,.07);transform:rotate(-12deg);pointer-events:none;z-index:-1}
+.acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.acts button{padding:5px 9px;font-size:12px}
+button.wa{background:#e8fbf1;color:#0a7a4d;border:1px solid #8fe0b8}
+.stopc{margin-top:6px}.stopc .stop{margin-top:0}.sd{padding:6px 8px 2px 34px;border:1px solid var(--ln);border-top:0;border-radius:0 0 10px 10px}
+.ov{position:fixed;inset:0;background:rgba(40,20,20,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:8px}.ov.on{display:flex}
+.mod{position:relative;overflow:hidden;background:#fff;border:2px solid var(--bd);border-radius:16px;padding:14px;max-width:760px;width:100%;max-height:94vh;display:flex;flex-direction:column}
+.mod::before{content:"SATMOLA";position:absolute;inset:0;display:grid;place-items:center;font-size:130px;font-weight:900;color:rgba(217,31,47,.06);transform:rotate(-12deg);pointer-events:none}
+.mod>*{position:relative}.mbody{overflow:auto;flex:1}
+.fld{flex:1 1 150px;font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--rd);border:1px solid var(--bd);border-radius:10px;padding:5px 8px}
+.fld input,.fld select{border:0;padding:3px 0;background:none;font-weight:600;color:var(--tx);width:100%;font:inherit;font-size:13px}
+.sig{flex:1 1 200px;border:1px dashed #bbb;border-radius:10px;padding:26px 8px 6px;text-align:center;font-size:12px;font-weight:700}
+@page{size:A4 landscape;margin:8mm}
+@media print{body>*:not(#sheetM){display:none!important}body::before{display:none}#sheetM{position:static;background:#fff;display:block}.mod{max-height:none;max-width:none;border:0}.noprint{display:none!important}.mbody{overflow:visible}}
+.map iframe{display:block;width:100%;height:340px;border:0}.map.big iframe{height:560px}.map .ban{top:auto;bottom:8px;z-index:2}
+.ref{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-top:8px;padding:8px;background:rgba(245,163,10,.1);border-radius:8px}.ref b{color:var(--mu)}
+.map #lf{height:340px}.map.big #lf{height:560px}
+@media(max-width:820px){input,textarea,select{font-size:16px}}
+#warn,#rmBlk{display:none!important}
+@media print{.mod{display:block!important}.mbody,.wrap{overflow:visible!important;max-height:none!important}}
+#t-map{--gh:min(84vh,860px);height:var(--gh);align-items:stretch}
+#t-map.gbig{--gh:min(130vh,1200px)}
+#t-map>div{display:flex;flex-direction:column;min-height:0;height:100%}
+#t-map>div>.cd{margin-bottom:10px;flex:none}
+#t-map>div:first-child>.cd:last-child{flex:1;min-height:0;overflow:auto;margin-bottom:0}
+#t-map>div:last-child>.cd:first-child{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
+.map{flex:1;min-height:300px}
+.map iframe,.map svg,.map #lf{height:100%!important;width:100%}
+.res{max-height:260px;overflow:auto}
+#q{font-size:15px;padding:12px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pc{border:1px solid var(--bd);border-radius:12px;padding:10px;background:rgba(245,163,10,.07);display:flex;flex-direction:column;gap:6px}
+.pl{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--rd)}
+.pc button{align-self:flex-start;margin-top:auto}
+.pc select{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px;font:inherit}
+@media(max-width:820px){#t-map{height:auto!important}#t-map>div{height:auto}#t-map>div:first-child>.cd:last-child{max-height:60vh}.map{height:340px;flex:none}}
+@media(max-width:560px){.pgrid{grid-template-columns:1fr}}
+#shM td,#shM th{padding:5px 6px}#shM td:first-child{min-width:230px}
+#t-map{grid-template-columns:minmax(0,480px) minmax(0,1fr)}
+@media(max-width:820px){#t-map{grid-template-columns:1fr}}
+@media print{#shM td,#shM th{padding:3px 4px;font-size:10px}#shM td:first-child{min-width:140px}}
+</style></head><body>
+<div class="hd">
+ <div class="logo">SATMOLA<small>NAMKEEN · LOGISTICS</small></div>
+ <h1>Satmola Logistics &amp; Delhi NCR Routing Hub<small id="hubLine"></small></h1>
+ <div class="pill"><span class="mu" style="align-self:center;padding:0 4px">HUB:</span><button id="h20" class="on">J-20 Satmola</button><button id="h15" class="o">J-15</button></div>
+ <div class="pill"><button id="fD" class="on">Diesel</button><button id="fC" class="o">CNG</button></div>
+ <button class="y" id="trip">📄 Trip Sheet</button><button id="addBp">+ Add BP</button><button class="o" id="cfgB">⚙ Settings</button>
+</div>
+<div class="stats">
+ <div class="st"><span>DISPATCH BASE</span><b id="sBase" style="font-size:14px;color:var(--tx)"></b><i id="sAddr"></i></div>
+ <div class="st"><span>TOTAL DELIVERIES</span><b id="sN">0 Stops</b><i>Sequential drops queued</i></div>
+ <div class="st"><span>ROUTE DISTANCE</span><b id="sKm">0 km</b><i>Sequential road path (estimate)</i></div>
+ <div class="st"><span>TRIP DURATION</span><b id="sT">0 min</b><i id="sSp"></i></div>
+ <div class="st"><span id="fLbl">DIESEL EST.</span><b id="sF">0.0 L</b><i id="sFi"></i></div>
+</div>
+<div class="tabs"><button class="tab on" data-t="map">◎ Real Map &amp; Simulator</button><button class="tab" data-t="dir">Directory</button></div>
+
+<div id="t-map" class="grid">
+ <div>
+  <div class="cd"><b>Search Directory &amp; Add Drop</b><div class="mu">BP Name, City, Block, Zone</div>
+   <input type="search" id="q" placeholder="Search BP name, city, block…" style="margin-top:8px"><div class="res" id="res"></div>
+   <div class="row" style="margin-top:8px"><label><input type="checkbox" id="auto" checked> Auto-Insert at Lowest Detour</label>
+   <button class="o" id="def" style="display:none"></button><button class="o" id="clr">🗑 Clear Route</button></div></div>
+  <div class="cd"><div class="row" style="justify-content:space-between"><b id="pTitle">Planned Stops (0)</b><span><button class="o" id="opt">✨ Optimize</button> <button class="o" id="rev">⇄ Reverse</button></span></div>
+   <div class="mu">Use ▲ ▼ to reorder stops</div>
+   <div class="stop" style="border-left-color:var(--rd);cursor:default"><div class="num" style="background:#b8101f">H</div><div class="t" id="hubBox"></div></div>
+   <div id="stops"></div></div>
+ </div>
+ <div>
+  <div class="cd"><b>Google Maps Delhi-NCR Delivery View</b>
+   <div class="row" style="margin:8px 0"><button id="sim">▶ Start Simulation</button><button class="o" id="wa">WhatsApp</button><button class="o" id="cpy">Copy Formatted Stops</button><button class="o" id="sbs">Stop by Stop</button><button id="dirs">➤ Directions</button><button class="o" id="bG">Google Map</button><button class="o" id="bS">Street Map</button><button class="o" id="bV">Schematic</button><button class="o" id="ogm">Open in Google Maps</button><button class="o" id="eng" style="display:none"></button><button class="o" id="vw" style="display:none"></button><button class="o" id="fit">Fit Route</button><button class="o" id="str">Stretch</button></div>
+   <div class="map" id="mapBox"><div class="ban" id="ban">No stop selected</div><div id="lf" style="display:none"></div><iframe id="rm" title="Real map" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe><svg id="svg" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet" style="display:none"></svg><div id="rmBlk" style="display:none;padding:12px;background:#fff7e0;border-top:1px solid var(--bd)"><b>The live map cannot load inside Claude.</b> Claude blocks Google Maps and map tiles for pages it hosts. Download <b>satmola-routing-hub.html</b>, open it in Chrome, and the live map with BP-name search works there. The schematic is shown here.</div></div>
+   <div class="row" style="margin-top:8px"><input type="text" id="mq" placeholder="Map search text for the selected BP (edit it and press Enter to fix the pin)" style="flex:1 1 240px"><button class="o" id="mqGo">Update map</button></div>
+<div class="mu" id="warn" style="margin-top:6px"></div></div>
+  <div class="cd" id="card" style="display:none"></div>
+ </div>
+</div>
+
+<div id="t-hop"><div class="cd">
+ <div class="row" style="justify-content:space-between"><div><b>Hop Distance Tracker &amp; Travel Time Calculator</b><div class="mu">Hop-by-hop road distance</div></div>
+ <div class="row"><button class="o" id="cpH">Copy Hop Links</button><label>Speed: <b id="spV">24</b> km/h <input type="range" id="sp" min="10" max="60" value="24"></label></div></div>
+ <div class="wrap"><table><thead><tr><th>HOP</th><th>FROM</th><th>TO</th><th>ZONE</th><th class="r">DISTANCE</th><th class="r">TIME</th><th class="r">CUMULATIVE</th><th>LINK</th></tr></thead><tbody id="hops"></tbody></table></div></div></div>
+
+<div id="t-dir" style="display:none"><div class="cd">
+ <b>Directory (<span id="dn">0</span>)</b>
+ <div class="mu">Download the DIWALI tab as CSV and choose it here, or copy rows from the sheet (with header) and paste below. Optional columns: Lat, Lng.</div>
+ <div class="row" style="margin:8px 0"><input type="file" id="file" accept=".csv,.tsv,.txt"><button class="o" id="pBtn">Load pasted data</button><button class="o" id="dBtn">Demo data</button></div>
+ <textarea id="paste" rows="2" placeholder="Paste data copied from the sheet"></textarea>
+ <input type="search" id="dq" placeholder="Search directory…" style="margin:8px 0"><div id="dlist"></div></div></div>
+<div class="ov" id="sbsM"><div class="mod">
+ <div class="row" style="justify-content:space-between"><div><b style="font-size:17px">Stop-by-Stop Google Maps Links</b><div class="mu">1-click copy and Google Maps links for drivers</div></div><button class="o" data-x="sbsM">✕</button></div>
+ <div class="row" style="margin:10px 0;justify-content:space-between;background:rgba(245,163,10,.14);padding:8px;border-radius:10px"><b id="sbsN"></b><span class="row"><button class="g" id="sbsWa">Share on WhatsApp</button><button class="o" id="sbsAll">Copy All (WhatsApp Format)</button></span></div>
+ <div class="mbody" id="sbsL"></div>
+ <div class="row" style="justify-content:space-between;margin-top:8px"><span class="mu">Tip: click a URL box to copy it</span><button class="o" data-x="sbsM">Done</button></div>
+</div></div>
+<div class="ov" id="sheetM"><div class="mod" style="max-width:1200px">
+ <div class="row" style="justify-content:space-between"><div class="row"><div class="logo" style="font-size:14px;padding:4px 10px">SATMOLA<small>NAMKEEN · LOGISTICS</small></div><div><b style="font-size:17px;color:var(--rd)">TRIP SHEET - VISIT ORDER &amp; DISTANCES</b><div class="mu" id="shHub"></div></div></div>
+  <div class="row noprint"><button class="y" id="shOpt">✨ Optimize Sequence</button><button class="g" id="shWa">WhatsApp</button><select id="shOr" style="padding:7px 8px;border:1px solid var(--bd);border-radius:8px;background:#fff;color:var(--tx);font:inherit;font-weight:700"><option value="l">A4 Landscape</option><option value="p">A4 Portrait</option></select><button id="shPdf">Save as PDF</button><button class="o" id="shPr">Print</button><button class="o" id="shCp">Copy Text</button><button class="o" data-x="sheetM">✕</button></div></div>
+ <div class="row" style="margin:10px 0">
+  <label class="fld">TRIP ID<input type="text" id="tId"></label><label class="fld">DISPATCH DATE<input type="date" id="tDt"></label>
+  <label class="fld">DRIVER NAME<input type="text" id="tDr" placeholder="Driver name"></label><label class="fld">DRIVER MOBILE<input type="text" id="tDm" placeholder="+91 …"></label>
+  <label class="fld">VEHICLE NO<input type="text" id="tVn" placeholder="DL 1L AA 0000"></label>
+  <select id="tFl" style="display:none"><option>Own Fleet</option></select></div>
+ <div class="row mu" style="background:rgba(217,31,47,.07);padding:6px 10px;border-radius:8px;margin-bottom:8px"><input type="checkbox" id="shAll" checked style="display:none"><span id="shSum"></span></div>
+ <div class="mbody wrap"><table style="display:none"><tbody id="shB"></tbody></table><div style="margin:4px 0 8px;font-weight:800;color:var(--rd)">DISTANCE BETWEEN ALL POINTS (km) <span class="mu" style="font-weight:500">· yellow = your route · red = nearest point</span></div><div class="wrap"><table id="shM"></table></div></div>
+ <div class="row" style="margin-top:10px"><div class="sig">Driver Signature</div><div class="sig">Dispatch Supervisor Signature</div><div class="sig">Security Gate Outward Stamp</div></div>
+</div></div>
+<div class="ov" id="porM"><div class="mod" style="max-width:520px">
+ <div class="row" style="justify-content:space-between"><b style="font-size:17px">🛵 Book via Porter</b><button class="o" data-x="porM">✕</button></div>
+ <div class="mu" style="margin-top:8px">PICKUP (From)</div><textarea id="porP" rows="2"></textarea>
+ <div class="mu" style="margin-top:8px">DROP (To), editable</div><textarea id="porD" rows="2"></textarea>
+ <div class="acts"><button class="o" id="porCp">Copy Pickup</button><button class="o" id="porCd">Copy Drop</button><button class="b" id="porGo">Open Porter (copies both)</button></div>
+ <div class="mu" style="margin-top:8px">Porter has no public booking API. Paste Pickup and Drop into Porter and confirm there.</div></div></div>
+<div class="ov" id="addM"><div class="mod" style="max-width:460px">
+ <div class="row" style="justify-content:space-between"><b style="font-size:17px">+ Add BP</b><button class="o" data-x="addM">✕</button></div>
+ <div class="mu" style="margin-top:8px">BP / Party name</div><input type="text" id="aN">
+ <div class="mu" style="margin-top:8px">Address / Block</div><input type="text" id="aB">
+ <div class="mu" style="margin-top:8px">City / Area</div><input type="text" id="aC">
+ <div class="mu" style="margin-top:8px">Mobile (optional)</div><input type="text" id="aM">
+ <div class="acts"><button id="aGo">Add to Route</button></div></div></div>
+<div class="ov" id="llM"><div class="mod" style="max-width:460px">
+ <div class="row" style="justify-content:space-between"><b style="font-size:17px">Set lat,lng</b><button class="o" data-x="llM">✕</button></div>
+ <div class="mu" style="margin-top:8px">Paste latitude,longitude or the full Google Maps link the customer sent (e.g. 28.6139,77.2090)</div><input type="text" id="llI">
+ <div class="acts"><button id="llGo">Save</button></div></div></div>
+<div id="lk" style="display:none;position:fixed;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:40;background:#fff;border:2px solid var(--rd);border-radius:12px;padding:10px;box-shadow:0 4px 20px rgba(0,0,0,.25)"><b id="lkT"></b> <a id="lkA" target="_blank" rel="noopener noreferrer" style="color:var(--bl);font-weight:700">Try opening ↗</a> <button class="o" onclick="this.parentNode.style.display='none'">✕</button></div>
+<div class="ov" id="cfgM"><div class="mod" style="max-width:520px">
+ <div class="row" style="justify-content:space-between"><b style="font-size:17px">⚙ Settings</b><button class="o" data-x="cfgM">✕</button></div>
+ <div class="mu" style="margin-top:8px">Porter website link (opens on computer)</div><input type="text" id="sWeb" placeholder="https://porter.in/trucks/delhi">
+ <div class="mu" style="margin-top:8px">Porter app link (opens on mobile, optional)</div><input type="text" id="sApp" placeholder="Leave empty for automatic">
+ <div class="mu" style="margin-top:8px">Book via Porter copies the drop address. Paste it into Porter and fill the other details manually. If you have a Porter business dashboard link, put it in the website field.</div>
+ <div class="acts"><button id="sSave">Save</button></div></div></div>
+<div class="ov" id="poM"><div class="mod" style="max-width:660px">
+ <div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><div class="row" style="flex-wrap:nowrap"><div class="num" style="width:42px;height:42px;font-size:20px;border-radius:12px;background:var(--rd)">🚚</div><div><b style="font-size:18px">Porter Dispatch Assistant</b><div class="mu">Drop-off comes from the BP. Edit pickup, contact and vehicle, then open Porter.</div></div></div><button class="o" data-x="poM">✕</button></div>
+ <div class="pgrid mbody" style="margin-top:12px">
+  <div class="pc"><div class="pl">1. PICKUP LOCATION</div><textarea id="poP" rows="3"></textarea><button class="o" data-cp="poP">Copy Pick-up</button></div>
+  <div class="pc"><div class="pl">2. DROP-OFF (DESTINATION)</div><textarea id="poD" rows="3"></textarea><button class="o" data-cp="poD">Copy Drop-off</button></div>
+  <div class="pc"><div class="pl">3. RECEIVER CONTACT</div><input type="text" id="poN" placeholder="Receiver name"><input type="text" id="poM2" placeholder="Mobile number (empty = Porter default)"><button class="o" data-cp="poM2">Copy Mobile Number</button></div>
+  <div class="pc"><div class="pl">4. VEHICLE SIZE</div><select id="poV"><option>2 Wheeler (Bike)</option><option>3 Wheeler (up to 500 kg)</option><option>E-Rickshaw Loader</option><option>Eeco</option><option>Tata Ace (up to 750 kg)</option><option>Pickup 8ft (up to 1250 kg)</option><option>Pickup 8ft 1 Ton (up to 1000 kg)</option><option>Tata 407 (up to 2500 kg)</option><option>Pickup 14ft (up to 3500 kg)</option><option>Other (choose in Porter)</option></select><button class="o" data-cp="poV">Copy Vehicle</button></div>
+ </div>
+ <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="o" id="poAll">Copy details</button><button id="poGo">Open Porter</button><button class="o" data-x="poM">Close</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+var HUBS={"J-20":{n:"Noida Sector 63 J20 Satmola Namkeen",a:"Plot J-20, Block J, Sector 63, Noida, UP 201301",lat:28.627,lng:77.379},"J-15":{n:"Noida Sector 63 J15 Satmola Namkeen",a:"Plot J-15, Block J, Sector 63, Noida, UP 201301",lat:28.6262,lng:77.3772}};
+var LOC={"CHANDNI CHOWK":[28.6506,77.2303],"DARYA GANJ":[28.643,77.24],"DARYAGANJ":[28.643,77.24],"KAROL BAGH":[28.6519,77.1909],"PAHAR GANJ":[28.6448,77.2167],"PAHARGANJ":[28.6448,77.2167],"DWARKA":[28.5823,77.05],"MAHAVIR ENCLAVE":[28.6105,77.068],"NAJAFGARH":[28.609,76.9798],"JOHARIPUR":[28.715,77.28],"POOTH KALAN":[28.744,77.1],"SHAHDARA":[28.673,77.289],"JHEEL":[28.653,77.298],"HASTSAL":[28.6215,77.043],"UTTAM NAGAR":[28.62,77.055],"MAYUR VIHAR":[28.608,77.294],"ROHINI":[28.74,77.115],"FARIDABAD":[28.4089,77.3178],"GREATER NOIDA":[28.4744,77.504],"GAUTAM BUDDHA":[28.5355,77.391],"NOIDA":[28.5355,77.391],"NANGLOI":[28.683,77.064],"MAUJPUR":[28.69,77.28],"CHAND BAGH":[28.701,77.285],"JAGRITI ENCLAVE":[28.646,77.299],"JANAKPURI":[28.6219,77.0878],"AYA NAGAR":[28.48,77.13],"MUKUND PUR":[28.733,77.17],"SULTANPURI":[28.695,77.07],"NEB SARAI":[28.499,77.193],"SHYAM VIHAR":[28.615,77.0],"HARIDWAR":[29.9457,78.1642],"DEHRADUN":[30.3165,78.0322],"MUZAFFARNAGAR":[29.4727,77.7085],"JWALAPUR":[29.914,78.1],"PANCHKULA":[30.6942,76.8606],"DHOLPUR":[26.7025,77.893],"PATEL NAGAR":[28.651,77.17],"BENGALI MARKET":[28.632,77.23],"LODHI ROAD":[28.59,77.227],"KRISHNA NAGAR":[28.657,77.277],"VIKAS PURI":[28.637,77.07],"CHANDER VIHAR":[28.673,77.057],"BHOGAL":[28.5700,77.2540],"NAYA BAZAR":[28.6560,77.2200],"KISHAN GANJ":[28.6650,77.1800],"SITA RAM BAZAR":[28.6490,77.2270],"HAUZ QAZI":[28.6440,77.2300],"DELHI":[28.6139,77.209]};
+var D=[["A D TRADERS,CHANDNI CHOWK,DL","CHANDNI CHOWK","TEHWAR KHAN, NAYA BANS, CHANDNI CHOWK","CENTRAL DELHI","SUMAN P.","Namkeen Divison","Delhi",""],["A J ENTERPRISES,ADARSH NAGAR,DL","JOHARIPUR","GOKULPURI,JOHARIPUR","NORTH WEST DELHI","SUMAN P.","Namkeen Divison","Delhi",""],["A K AGENCY HARIDWAR(UTTARAKHAND)","HARIDWAR","1 LANDHORA ROAD PER GHARI HARIDWAR UTTARAKHAND","Not Found","PUSHKAR S.","Namkeen Divison","Uttarakhand",""],["A K ENTERPRISES, NAJAFGARH ROAD (DL)","NAJAFGARH","ROAD, ICICI BANK, NEW DELHI, NORTH WEST DELHI","SOUTH WEST DELHI","RASHID","Modern Trade","Delhi",""],["A S ASSOCIATES,DEHRADUN,UK","MUZAFFARNAGAR","BYPASS ROAD DEHRADUN","Not Found","AMRENDRA KUMAR","Modern Trade","Uttarakhand",""],["AAP KA BAZAR SEC 12 DWARAKA (DL)","DWARKA","SCHOOL DWARKA DELHI","SOUTH WEST DELHI","TARUN KUMAR","Modern Trade","Delhi",""],["AARNA CREATION, SHAHDARA (DL)","SHAHDARA","GALI NO. 1, SHAHDARA","EAST DELHI","SUMAN P.","Namkeen Divison","Delhi","9899996180, 9540304797"],["ACHAR PALACE,JHEEL,DL","JHEEL","JHEEL KHURANJA","EAST DELHI","Amit Mishra","Modern Trade","Delhi","9310775300"],["AMIT TRADERS,ROHINI,DL","ROHINI","ROHINI, North West","NORTH WEST DELHI","SUMAN P.","Namkeen Divison","Delhi",""],["ANMOL ENTERPRISES,FARIDABAD,HR","FARIDABAD","RAJEEV NAGAR FARIDABAD","Not Found","SUMAN P.","Namkeen Divison","Haryana","8368615453"],["AACHAL GENERAL STORE,NOIDA,UP","GAUTAM BUDDHA NAGAR","tyagi market, near by shiv shakit pg, noida","Not Found","Amit Mishra","Modern Trade","Uttar Pradesh",""],["RMCR HYPERMARKET,BHOGAL,DL","BHOGAL","BHOGAL","SOUTH EAST DELHI","Amit Mishra","Modern Trade","Delhi",""]];
+var rows=[],stops=[],hubK="J-20",fuel="D",speed=24,selI=-1,sbsI=0,simT=null,simP=null,focus=null;
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function toast(m){var t=$("toast");t.textContent=m;t.className="toast on";setTimeout(function(){t.className="toast"},1800)}
+function copy(x){var ok=function(){toast("Copied ✓")};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(x).then(ok,function(){fb(x);ok()})}else{fb(x);ok()}}
+function fb(t){var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy")}catch(e){}document.body.removeChild(a)}
+function clean(x){x=(x||"").trim();return/^(not found|not available)$/i.test(x)?"":x}
+function addr(r){var p=[r.block,r.city,r.state].map(clean).filter(Boolean),o=[];p.forEach(function(x){if(!o.some(function(y){return y.toUpperCase().indexOf(x.toUpperCase())>-1}))o.push(x)});return o.join(", ")+", India"}
+function geo(r){if(r.lat&&r.lng)return[+r.lat,+r.lng];var t=(r.city+" "+r.block+" "+r.name).toUpperCase(),best=null,bl=0;for(var k in LOC){if(t.indexOf(k)>-1&&k.length>bl&&k!=="DELHI"){best=LOC[k];bl=k.length}}return best||(t.indexOf("DELHI")>-1||t.indexOf(",DL")>-1?LOC.DELHI:null)}
+function P(i){var r=rows[i],g=geo(r);return{name:r.name,addr:addr(r),q:(r.mq||qaddr(r)),lat:g?g[0]:null,lng:g?g[1]:null,zone:r.zone,mob:r.mobile,i:i,approx:!(r.lat&&r.lng)}}
+function hub(){var h=HUBS[hubK];return{name:h.n+" (Hub)",addr:h.a,lat:h.lat,lng:h.lng,zone:"HUB"}}
+function pts(){return[hub()].concat(stops.map(P))}
+function hav(a,b){if(a.lat==null||b.lat==null)return null;var R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lng-a.lng)*r,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)*Math.sin(dn/2);return 2*R*Math.asin(Math.sqrt(x))*1.3}
+function fm(m){m=Math.round(m);return m<60?m+" min":Math.floor(m/60)+" hr "+(m%60)+" min"}
+function link(a,b){var f=function(p){return p.lat!=null&&p.approx===false?p.lat+","+p.lng:(p.q||p.addr)};return"https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(f(a))+"&destination="+encodeURIComponent(f(b))+"&travelmode=driving"}
+function line(p,i){return(i!=null?i+". ":"")+p.name+"\n   📍 "+p.addr+(p.mob?"\n   📞 "+p.mob:"")+"\n   🗺 https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.lat!=null&&p.approx===false?p.lat+","+p.lng:(p.q||p.addr))}
+function totals(){var p=pts(),km=0,h=[];for(var i=1;i<p.length;i++){var d=hav(p[i-1],p[i]);h.push(d);km+=d||0}return{p:p,h:h,km:km}}
+function fmtText(withHops){var t=totals(),s="🚚 Satmola Route ("+hubK+")\n🏭 "+HUBS[hubK].n+"\n"+HUBS[hubK].a+"\n\n";
+ t.p.slice(1).forEach(function(p,i){s+=line(p,i+1)+(withHops&&t.h[i]!=null?"\n   ➜ "+t.h[i].toFixed(1)+" km":"")+"\n\n"});
+ return s+"Total: "+t.km.toFixed(1)+" km • "+fm(t.km/speed*60)}
+function stats(){var t=totals(),h=HUBS[hubK];$("hubLine").textContent=h.n+" · Primary Dispatch Hub";$("sBase").textContent=h.n;$("sAddr").textContent=h.a;
+ $("sN").textContent=stops.length+" Stops";$("sKm").textContent=t.km.toFixed(1)+" km";$("sT").textContent=fm(t.km/speed*60);$("sSp").textContent="at "+speed+" km/h avg speed";
+ var l=fuel=="D"?t.km/10:t.km/20,c=fuel=="D"?l*89.5:l*76;$("fLbl").textContent=fuel=="D"?"DIESEL EST.":"CNG EST.";$("sF").textContent=l.toFixed(1)+(fuel=="D"?" L":" kg")+" (₹"+Math.round(c)+")";
+ $("sFi").textContent=fuel=="D"?"10 km/L • ₹89.5/L":"20 km/kg • ₹76/kg"}
+function drawStops(){var t=totals();$("pTitle").textContent="Planned Stops ("+stops.length+" BP Orders)";
+ $("hubBox").innerHTML=esc(HUBS[hubK].n)+"<small>"+esc(HUBS[hubK].a)+"</small>";
+ $("stops").innerHTML=stops.map(function(ri,k){var p=P(ri);return"<div class='stop"+(k==selI?" sel":"")+"' data-k='"+k+"'><div class='num'>"+(k+1)+"</div><div class='t'>"+esc(p.name)+"<small>"+esc(p.zone||"")+(t.h[k]!=null?" · "+t.h[k].toFixed(1)+" km":"")+"</small></div><button data-a='u'>▲</button><button data-a='d'>▼</button><button data-a='x'>🗑</button></div>"}).join("")||"<div class='mu' style='padding:14px;text-align:center'>No stops. Search above to add.</div>"}
+function drawMap(){var p=pts(),L=p.filter(function(x){return x.lat!=null});var n=0;p.forEach(function(x){if(x.lat==null)n++});
+ $("warn").textContent=n?n+" stop(s) have no location. Select the stop and use Set lat,lng.":(stops.length?"Locations are approximate (by area). Request a pin and use Set lat,lng to make them exact.":"");
+ var a=L.map(function(x){return x.lat}),o=L.map(function(x){return x.lng}),mnA=Math.min.apply(0,a),mxA=Math.max.apply(0,a),mnO=Math.min.apply(0,o),mxO=Math.max.apply(0,o);
+ var cx=Math.cos(28.6*Math.PI/180),w=Math.max((mxO-mnO)*cx,.02),h=Math.max(mxA-mnA,.02),s=Math.min(520/w,290/h);
+ var X=function(g){return 300+((g-(mnO+mxO)/2)*cx)*s},Y=function(t){return 180-(t-(mnA+mxA)/2)*s};
+ var g="";for(var i=0;i<=600;i+=50)g+="<line x1='"+i+"' y1='0' x2='"+i+"' y2='360' stroke='#e9dfc2' stroke-width='1'/>";for(var j=0;j<=360;j+=50)g+="<line x1='0' y1='"+j+"' x2='600' y2='"+j+"' stroke='#e9dfc2'/>";
+ var d=L.map(function(x){return X(x.lng)+","+Y(x.lat)}).join(" ");
+ g+="<polyline points='"+d+"' fill='none' stroke='#f5a30a' stroke-width='9' stroke-linejoin='round' opacity='.7'/><polyline points='"+d+"' fill='none' stroke='#d91f2f' stroke-width='3' stroke-dasharray='8 5'/>";
+ p.forEach(function(x,i){if(x.lat==null)return;var cxp=X(x.lng),cyp=Y(x.lat),f=focus===i?"#f5a30a":"#d91f2f";
+  g+="<g data-s='"+(i-1)+"' style='cursor:pointer'><circle cx='"+cxp+"' cy='"+cyp+"' r='"+(focus===i?15:12)+"' fill='"+(i?f:"#7a0a14")+"' stroke='#fff' stroke-width='2'/><text x='"+cxp+"' y='"+(cyp+4)+"' text-anchor='middle' font-size='11' font-weight='800' fill='#fff'>"+(i?i:"H")+"</text></g>"});
+ if(simP!=null&&p[simP]&&p[simP].lat!=null)g+="<text x='"+(X(p[simP].lng)-9)+"' y='"+(Y(p[simP].lat)-18)+"' font-size='22'>🚚</text>";
+ $("svg").innerHTML=g}
+function drawHops(){var t=totals(),c=0;$("hops").innerHTML=t.h.map(function(d,i){c+=d||0;var a=t.p[i],b=t.p[i+1];return"<tr><td><span class='num'>"+(i+1)+"</span></td><td><b>"+esc(a.name)+"</b></td><td><b>"+esc(b.name)+"</b></td><td><span class='tag'>"+esc(b.zone||"—")+"</span></td><td class='r km'>"+(d!=null?d.toFixed(1)+" km":"—")+"</td><td class='r'>"+(d!=null?"~"+fm(d/speed*60):"—")+"</td><td class='r'><b>"+c.toFixed(1)+" km</b></td><td><button class='o' data-h='"+i+"'>Copy Link</button></td></tr>"}).join("")||"<tr><td colspan='8' class='mu'>No hops yet</td></tr>"}
+function card(){var c=$("card");if(selI<0||!stops[selI]){c.style.display="none";return}var p=P(stops[selI]);c.style.display="block";
+ c.innerHTML="<div class='row' style='justify-content:space-between'><div><b>"+esc(p.name)+"</b><div class='mu'>"+esc(p.addr)+"</div><span class='tag'>"+esc(p.zone||"")+"</span>"+(p.mob?"<span class='tag'>📞 "+esc(p.mob)+"</span>":"")+(p.lat==null?"<span class='tag'>no location</span>":"")+"</div></div><div class='row' style='margin-top:8px'><button class='y' data-c='ctr'>◎ Center in Live Map</button><button data-c='go'>➤ Start Journey</button><button class='g' data-c='pin'>Request Pin (WA)</button><button class='b' data-c='por'>Book via Porter</button><button class='o' data-c='cp'>Copy Location</button><button class='o' data-c='ll'>Set lat,lng</button></div>"}
+function all(){stats();drawStops();drawMap();drawHops();card()}
+function detourInsert(ri){var p=pts(),n=P(ri);if(n.lat==null||p.some(function(x){return x.lat==null})){stops.push(ri);return}var best=0,bc=1e18;
+ for(var i=0;i<p.length;i++){var c=i==p.length-1?hav(p[i],n):hav(p[i],n)+hav(n,p[i+1])-hav(p[i],p[i+1]);if(c<bc){bc=c;best=i}}stops.splice(best,0,ri)}
+function add(ri){if(stops.indexOf(ri)>-1)return toast("Already in route");$("auto").checked?detourInsert(ri):stops.push(ri);prevRi=null;selI=stops.indexOf(ri);all();$("q").value="";$("res").innerHTML="";toast("Stop "+(selI+1)+" added");try{$("q").focus()}catch(e){}}
+function match(q){q=q.toLowerCase();return rows.map(function(r,i){return i}).filter(function(i){var r=rows[i];return(r.name+" "+r.city+" "+r.block+" "+r.zone).toLowerCase().indexOf(q)>-1})}
+$("q").oninput=function(){var q=this.value.trim();if(!q){$("res").innerHTML="";return}$("res").innerHTML=match(q).slice(0,8).map(function(i){var r=rows[i];return"<div class='sr'><div>"+esc(r.name)+"<small>"+esc(r.city)+" · "+esc(r.zone)+"</small></div><button data-add='"+i+"'>+ Add</button></div>"}).join("")||"<div class='mu'>No results</div>"};
+$("res").onclick=function(e){var b=e.target.closest("[data-add]");if(b)add(+b.dataset.add)};
+$("stops").onclick=function(e){var s=e.target.closest(".stop");if(!s)return;var k=+s.dataset.k,a=e.target.dataset.a;
+ if(a=="u"&&k>0){var t=stops[k];stops[k]=stops[k-1];stops[k-1]=t;selI=k-1}else if(a=="d"&&k<stops.length-1){var t2=stops[k];stops[k]=stops[k+1];stops[k+1]=t2;selI=k+1}else if(a=="x"){stops.splice(k,1);selI=-1}else selI=k;all()};
+$("svg").onclick=function(e){var g=e.target.closest("[data-s]");if(g&&+g.dataset.s>=0){selI=+g.dataset.s;all()}};
+$("card").onclick=function(e){var b=e.target.closest("[data-c]");if(!b||selI<0)return;var r=rows[stops[selI]],p=P(stops[selI]),c=b.dataset.c;
+ if(c=="ctr"){focus=selI+1;drawMap();$("ban").textContent="LIVE: "+p.name}
+ if(c=="go")go("https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(p.lat!=null&&!p.approx?p.lat+","+p.lng:(p.q||p.addr))+"&travelmode=driving","_blank");
+ if(c=="pin"){var m=(p.mob||"").replace(/[^\d,]/g,"").split(",")[0],txt="Hello, please share your Google Maps location pin on WhatsApp for your Satmola Namkeen delivery. Thank you.";go("https://wa.me/"+(m.length==10?"91"+m:"")+"?text="+encodeURIComponent(txt),"_blank")}
+ if(c=="por")bookPorter(p);
+ if(c=="cp")copy(mapUrl(p));
+ if(c=="ll"){llRi=stops[selI];$("llI").value=p.lat!=null?p.lat+","+p.lng:"";$("llM").classList.add("on")}};
+$("def").onclick=function(){stops=rows.slice(0,5).map(function(_,i){return i});selI=-1;all()};
+$("clr").onclick=function(){stops=[];selI=-1;focus=null;simP=null;clearInterval(simT);all()};
+$("opt").onclick=function(){var p=stops.map(P),cur=hub(),left=p.slice(),o=[];while(left.length){var bi=0,bd=1e18;left.forEach(function(x,i){var d=hav(cur,x);if(d==null)d=1e9;if(d<bd){bd=d;bi=i}});cur=left.splice(bi,1)[0];o.push(cur.i)}stops=o;selI=-1;all();toast("Route optimized")};
+$("rev").onclick=function(){stops.reverse();all()};
+$("cpy").onclick=function(){copy(fmtText(false))};$("trip").onclick=function(){copy(fmtText(true))};
+$("wa").onclick=function(){go("https://wa.me/?text="+encodeURIComponent(fmtText(false)),"_blank")};
+$("sbs").onclick=function(){if(!stops.length)return toast("Add stops first");if(sbsI>=stops.length)sbsI=0;var p=P(stops[sbsI]);copy(line(p,sbsI+1));selI=sbsI;$("ban").textContent="Copied "+(sbsI+1)+"/"+stops.length+": "+p.name;sbsI++;all()};
+$("dirs").onclick=function(){if(!stops.length)return toast("Add stops first");var p=pts(),f=function(x){return x.lat!=null&&!x.approx?x.lat+","+x.lng:(x.q||x.addr)},last=p[p.length-1],w=p.slice(1,-1).map(f).join("|");
+ go("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(HUBS[hubK].a)+"&destination="+encodeURIComponent(f(last))+(w?"&waypoints="+encodeURIComponent(w):"")+"&travelmode=driving","_blank")};
+$("fit").onclick=function(){focus=null;drawMap()};$("str").onclick=function(){$("mapBox").classList.toggle("big")};
+$("sim").onclick=function(){clearInterval(simT);if(!stops.length)return toast("Add stops first");var i=0,p=pts();simP=0;$("ban").textContent="🚚 Left the hub";drawMap();
+ simT=setInterval(function(){i++;if(i>=p.length){clearInterval(simT);simP=null;$("ban").textContent="Trip complete ✓";drawMap();return}simP=i;$("ban").textContent="🚚 Stop "+i+": "+p[i].name;drawMap()},1100)};
+$("hops").onclick=function(e){var b=e.target.closest("[data-h]");if(!b)return;var i=+b.dataset.h,p=pts();copy(link(p[i],p[i+1]))};
+$("cpH").onclick=function(){var p=pts(),s="";for(var i=1;i<p.length;i++)s+=i+". "+p[i-1].name+" → "+p[i].name+"\n"+link(p[i-1],p[i])+"\n\n";copy(s)};
+$("sp").oninput=function(){speed=+this.value;$("spV").textContent=speed;all()};
+function setHub(k){hubK=k;$("h20").className=k=="J-20"?"on":"o";$("h15").className=k=="J-15"?"on":"o";all()}
+$("h20").onclick=function(){setHub("J-20")};$("h15").onclick=function(){setHub("J-15")};
+$("fD").onclick=function(){fuel="D";$("fD").className="on";$("fC").className="o";stats()};$("fC").onclick=function(){fuel="C";$("fC").className="on";$("fD").className="o";stats()};
+document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});b.classList.add("on");["map","dir"].forEach(function(t){$("t-"+t).style.display=t==b.dataset.t?(t=="map"?"grid":"block"):"none"});$("t-hop").style.display=b.dataset.t=="map"?"block":"none"}});
+$("addBp").onclick=function(){var n=prompt("BP / Party name:");if(!n)return;var b=prompt("Address / Block:","")||"",c=prompt("City / Area:","")||"",m=prompt("Mobile (optional):","")||"";rows.push({name:n,city:c,block:b,zone:"",emp:"",group:"",state:"",mobile:m});dir();add(rows.length-1)};
+function dir(){var q=$("dq").value.toLowerCase();$("dn").textContent=rows.length;var l=[];rows.forEach(function(r,i){if(!q||(r.name+" "+r.city+" "+r.block).toLowerCase().indexOf(q)>-1)l.push(i)});
+ $("dlist").innerHTML=l.slice(0,200).map(function(i){var r=rows[i];return"<div class='sr'><div><b>"+esc(r.name)+"</b><small>"+esc(addr(r))+" · "+esc(r.zone)+(r.mobile?" · 📞 "+esc(r.mobile):"")+"</small></div><button data-add='"+i+"'>+ Add</button></div>"}).join("")+(l.length>200?"<div class='mu'>Showing the first 200. Use search to narrow down.</div>":"")}
+$("dq").oninput=dir;$("dlist").onclick=function(e){var b=e.target.closest("[data-add]");if(b){add(+b.dataset.add);toast("Added to route")}};
+function parse(text){var d=text.split("\n")[0].indexOf("\t")>-1?"\t":",",out=[],row=[],c="",q=false;for(var i=0;i<text.length;i++){var ch=text[i];if(q){if(ch=='"'){if(text[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}else if(ch=='"')q=true;else if(ch==d){row.push(c);c=""}else if(ch=="\n"||ch=="\r"){if(ch=="\r"&&text[i+1]=="\n")i++;row.push(c);out.push(row);row=[];c=""}else c+=ch}if(c||row.length){row.push(c);out.push(row)}return out.filter(function(r){return r.some(function(x){return x.trim()})})}
+function load(text){var t=parse(text);if(t.length<2)return toast("No data found");var h=t[0].map(function(x){return x.trim().toLowerCase()}),ix=function(n){return h.indexOf(n)};
+ var m={name:ix("bp name"),city:ix("city name"),block:ix("bill-to block"),zone:ix("zone name"),emp:ix("sales employee"),group:ix("group"),state:ix("state"),mobile:ix("mobile"),owner:ix("owner"),lat:ix("lat"),lng:ix("lng")};if(m.name<0)return toast("Header must include BP Name");
+ rows=t.slice(1).map(function(r){var g=function(k){return k<0?"":(r[k]||"").trim()};return{name:g(m.name),city:g(m.city),block:g(m.block),zone:g(m.zone),emp:g(m.emp),group:g(m.group),state:g(m.state),mobile:g(m.mobile),owner:g(m.owner),lat:g(m.lat),lng:g(m.lng)}}).filter(function(r){return r.name});stops=[];selI=-1;dir();all();toast(rows.length+" BPs loaded")}
+function demo(){rows=D.map(function(a){return{name:a[0],city:a[1],block:a[2],zone:a[3],emp:a[4],group:a[5],state:a[6],mobile:a[7],lat:"",lng:""}});stops=[];selI=-1;dir();all()}
+$("file").onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){load(String(r.result))};r.readAsText(f)};
+$("pBtn").onclick=function(){load($("paste").value)};$("dBtn").onclick=demo;
+var NL=String.fromCharCode(10),inc={},cr={};
+function own(r){var w=(r.owner||"").trim().split(/\s+/).filter(Boolean),h=w.length/2;if(w.length%2==0&&w.slice(0,h).join(" ")==w.slice(h).join(" "))w=w.slice(0,h);return w.join(" ")}
+function P(i){var r=rows[i],g=geo(r);return{name:r.name,addr:addr(r),q:(r.mq||qaddr(r)),lat:g?g[0]:null,lng:g?g[1]:null,zone:r.zone,mob:r.mobile,emp:r.emp,owner:own(r),i:i,approx:!(r.lat&&r.lng)}}
+function mapUrl(p){return"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.lat!=null&&!p.approx?p.lat+","+p.lng:(p.q||p.addr))}
+function act(g,ri){var p=P(ri);
+ if(g=="cp")copy(mapUrl(p));
+ else if(g=="wa")go("https://wa.me/?text="+encodeURIComponent(line(p)),"_blank");
+ else if(g=="por")bookPorter(p);
+ else if(g=="nav")go("https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(p.lat!=null&&!p.approx?p.lat+","+p.lng:(p.q||p.addr))+"&travelmode=driving","_blank");
+ else if(g=="ll"){llRi=ri;$("llI").value=p.lat!=null&&!p.approx?p.lat+","+p.lng:"";$("llM").classList.add("on")}else if(g=="prev"){if(SBX){go(mapUrl(p));return}prevRi=ri;focus=null;viewReal=true;all();$("ban").textContent="Preview: "+p.name;$("mapBox").scrollIntoView({behavior:"smooth",block:"center"})}else if(g=="open")go(mapUrl(p),"_blank");
+ else if(g=="loc"){var k=stops.indexOf(ri);if(k>-1){selI=k;focus=k+1;all();$("ban").textContent="LIVE: "+p.name;$("svg").scrollIntoView({behavior:"smooth",block:"center"})}else go(mapUrl(p),"_blank")}
+ else if(g=="pin"){var m=(p.mob||"").replace(/[^\d,]/g,"").split(",")[0];go("https://wa.me/"+(m.length==10?"91"+m:"")+"?text="+encodeURIComponent("Hello, please share your Google Maps location pin on WhatsApp for your Satmola Namkeen delivery. Thank you."),"_blank")}}
+function drawStops(){var t=totals();$("pTitle").textContent="Planned Stops ("+stops.length+" BP Orders)";$("hubBox").innerHTML=esc(HUBS[hubK].n)+"<small>"+esc(HUBS[hubK].a)+"</small>";
+ $("stops").innerHTML=stops.map(function(ri,k){var p=P(ri),d=t.h[k];
+  return"<div class='stopc' data-k='"+k+"'><div class='stop"+(k==selI?" sel":"")+"'><div class='num'>"+(k+1)+"</div><div class='t'>"+esc(p.name)+"<small>"+esc(p.zone||"")+"</small></div><button data-a='u'>▲</button><button data-a='d'>▼</button><button data-a='x'>🗑</button></div>"
+  +"<div class='sd'><div class='mu'>📍 "+esc(p.addr)+"</div><div>"+(p.zone?"<span class='tag'>"+esc(p.zone)+"</span>":"")+(p.emp?"<span class='tag'>Rep: "+esc(p.emp)+"</span>":"")+(p.owner?"<span class='tag'>Owner: "+esc(p.owner)+"</span>":"")+(p.mob?"<span class='tag'>📞 "+esc(p.mob)+"</span>":"")+(p.lat==null?"<span class='tag'>no location</span>":"")+"</div>"
+  +"<div class='acts'><button class='o' data-g='loc'>📍 Locate Map</button><button data-g='nav'>➤ Google Maps Nav</button><button class='b' data-g='por'>Book via Porter</button><button class='o' data-g='cp'>Copy Location</button><button class='wa' data-g='wa'>WhatsApp</button><button class='g' data-g='pin'>Request Pin</button></div>"
+  +"<div class='mu' style='margin:6px 0'>Leg: <b class='km'>"+(d!=null?d.toFixed(1)+" km":"—")+"</b>"+(d!=null?" · ~"+fm(d/speed*60):"")+"</div></div></div>"}).join("")||"<div class='mu' style='padding:14px;text-align:center'>No stops. Search above to add.</div>"}
+function resHtml(i){var r=rows[i];return"<div class='sr' style='flex-wrap:wrap' data-ri='"+i+"'><div data-g='add' style='cursor:pointer;flex:1 1 180px'>"+esc(r.name)+"<small>"+esc(r.city)+" · "+esc(r.zone)+"</small></div><div class='acts' style='margin:0'><button data-g='add'>+ Add</button><button class='b' data-g='por'>Book via Porter</button><button class='wa' data-g='wa'>WhatsApp</button><button class='o' data-g='cp'>Copy Location</button></div></div>"}
+$("q").oninput=function(){var q=this.value.trim();if(!q){$("res").innerHTML="";return}$("res").innerHTML=match(q).slice(0,8).map(resHtml).join("")||"<div class='mu'>No results</div>"};
+$("res").onclick=function(e){var b=e.target.closest("[data-g]");if(!b)return;var i=+b.closest("[data-ri]").dataset.ri;if(b.dataset.g=="add")add(i);else act(b.dataset.g,i)};
+function dir(){var q=$("dq").value.toLowerCase();$("dn").textContent=rows.length;var l=[];rows.forEach(function(r,i){if(!q||(r.name+" "+r.city+" "+r.block).toLowerCase().indexOf(q)>-1)l.push(i)});$("dlist").innerHTML=l.slice(0,200).map(resHtml).join("")+(l.length>200?"<div class='mu'>Showing the first 200. Use search to narrow down.</div>":"")}
+$("dlist").onclick=function(e){var b=e.target.closest("[data-g]");if(!b)return;var i=+b.closest("[data-ri]").dataset.ri;if(b.dataset.g=="add"){add(i);toast("Added to route")}else act(b.dataset.g,i)};
+$("stops").onclick=function(e){var s=e.target.closest(".stopc");if(!s)return;var k=+s.dataset.k,a=e.target.dataset.a,g=e.target.dataset.g;if(g){act(g,stops[k]);return}
+ if(a=="u"&&k>0){var t=stops[k];stops[k]=stops[k-1];stops[k-1]=t;selI=k-1}else if(a=="d"&&k<stops.length-1){var t2=stops[k];stops[k]=stops[k+1];stops[k+1]=t2;selI=k+1}else if(a=="x"){stops.splice(k,1);selI=-1}else selI=k;all()};
+document.addEventListener("click",function(e){var x=e.target.closest("[data-x]");if(x)$(x.dataset.x).classList.remove("on")});
+/* Stop by Stop modal */
+$("sbs").onclick=function(){if(!stops.length)return toast("Add stops first");var p=pts().slice(1);$("sbsN").textContent=p.length+" stops ready for delivery dispatch";
+ $("sbsL").innerHTML=p.map(function(x,k){return"<div class='cd' style='background:#fffbea' data-ri='"+x.i+"'><div class='row' style='justify-content:space-between;align-items:flex-start'><div style='flex:1 1 220px;min-width:0'><span class='num' style='display:inline-grid'>"+(k+1)+"</span> <b>"+esc(x.name)+"</b><div class='mu'>"+esc(x.addr)+"</div><div>"+(x.emp?"<span class='tag'>Rep: "+esc(x.emp)+"</span>":"")+(x.owner?"<span class='tag'>Owner: "+esc(x.owner)+"</span>":"")+"</div></div><div class='acts' style='margin:0'><button class='o' data-g='cp'>Copy Location</button><button class='b' data-g='por'>Porter</button><button class='wa' data-g='wa'>WhatsApp</button><button class='o' data-g='open'>↗</button></div></div><input type='text' readonly data-u='1' value='"+esc(mapUrl(x))+"' style='font-family:monospace;font-size:12px;margin-top:8px'></div>"}).join("");$("sbsM").classList.add("on")};
+$("sbsL").onclick=function(e){var u=e.target.closest("[data-u]");if(u){u.select();copy(u.value);return}var b=e.target.closest("[data-g]");if(b)act(b.dataset.g,+b.closest("[data-ri]").dataset.ri)};
+$("sbsWa").onclick=function(){go("https://wa.me/?text="+encodeURIComponent(fmtText(false)),"_blank")};
+$("sbsAll").onclick=function(){copy(fmtText(false))};
+/* Trip sheet */
+function renderSheet(){var prev=hub(),km=0,n=0,h="";
+ stops.forEach(function(ri,k){var p=P(ri),on=inc[ri]!==false,d=null;if(on){d=hav(prev,p);km+=d||0;prev=p;n++}
+  h+="<tr style='"+(on?"":"opacity:.4")+"'><td><input type='checkbox' data-i='"+ri+"' "+(on?"checked":"")+"></td><td class='km'>"+(k+1)+"</td><td><b>"+esc(p.name)+"</b><br><span class='tag'>"+esc(p.zone||"")+"</span></td><td><b>"+esc(p.emp||"—")+"</b><br><span class='mu'>Owner: "+esc(p.owner||"—")+"</span></td><td>"+esc(p.mob||"—")+"</td><td class='mu'>"+esc(p.addr)+"</td><td class='r km'>"+(on&&d!=null?d.toFixed(1)+" km":"—")+"</td><td class='r'>"+(on&&d!=null?"~"+fm(d/speed*60):"—")+"</td><td><input type='text' data-cr='"+ri+"' value='"+(cr[ri]||12)+"' style='width:54px;padding:4px'></td><td class='noprint'><button data-g='nav' data-ri='"+ri+"'>G-Maps</button> <button class='b' data-g='por' data-ri='"+ri+"'>Porter</button></td><td style='min-width:90px;border-bottom:1px dashed #999'></td></tr>"});
+ $("shB").innerHTML=h||"<tr><td colspan='11' class='mu'>No stops. Add stops first.</td></tr>";
+ $("shSum").innerHTML="&nbsp; "+n+" of "+stops.length+" Drops Included · Trip Distance: <b class='km'>"+km.toFixed(1)+" km</b> · Transit Time: <b>"+fm(km/speed*60)+"</b>"}
+function sheetText(){var s="🚚 TRIP DELIVERY CHALLAN"+NL+"Trip: "+$("tId").value+" | Date: "+$("tDt").value+NL+"Driver: "+$("tDr").value+" "+$("tDm").value+" | Vehicle: "+$("tVn").value+" ("+$("tFl").value+")"+NL+"Hub: "+HUBS[hubK].n+NL+NL,prev=hub(),km=0,k=0;
+ stops.forEach(function(ri){if(inc[ri]===false)return;var p=P(ri),d=hav(prev,p);km+=d||0;k++;s+=line(p,k)+NL+"   Rep: "+(p.emp||"—")+" | Crates: "+(cr[ri]||12)+(d!=null?" | "+d.toFixed(1)+" km":"")+NL+NL;prev=p});return s+"Total: "+km.toFixed(1)+" km • "+fm(km/speed*60)}
+$("trip").onclick=function(){var d=new Date(),ymd=d.toISOString().slice(0,10);if(!$("tId").value)$("tId").value="SAT-TRIP-"+ymd.replace(/-/g,"")+"-"+Math.floor(1000+Math.random()*9000);if(!$("tDt").value)$("tDt").value=ymd;
+ try{var v=JSON.parse(localStorage.getItem("satDrv")||"{}");if(!$("tDr").value)$("tDr").value=v.n||"";if(!$("tDm").value)$("tDm").value=v.m||"";if(!$("tVn").value)$("tVn").value=v.v||""}catch(e){}
+ $("shHub").innerHTML="Hub: <b>"+esc(HUBS[hubK].n)+"</b> · "+esc(HUBS[hubK].a);renderSheet();$("sheetM").classList.add("on")};
+["tDr","tDm","tVn"].forEach(function(id){$(id).addEventListener("input",function(){try{localStorage.setItem("satDrv",JSON.stringify({n:$("tDr").value,m:$("tDm").value,v:$("tVn").value}))}catch(e){}})});
+$("shB").onclick=function(e){var b=e.target.closest("[data-g]");if(b)act(b.dataset.g,+b.dataset.ri)};
+$("shB").onchange=function(e){var t=e.target;if(t.type=="checkbox"&&t.dataset.i!=null){inc[t.dataset.i]=t.checked;renderSheet()}};
+$("shB").oninput=function(e){var t=e.target;if(t.dataset.cr!=null)cr[t.dataset.cr]=t.value};
+$("shAll").onchange=function(){var c=this.checked;stops.forEach(function(ri){inc[ri]=c});renderSheet()};
+$("shOpt").onclick=function(){$("opt").onclick();renderSheet()};
+$("shWa").onclick=function(){go("https://wa.me/?text="+encodeURIComponent(sheetText()),"_blank")};
+$("shCp").onclick=function(){copy(sheetText())};
+$("shPdf").onclick=function(){try{window.print()}catch(e){toast("Press Ctrl+P, then choose Save as PDF")}};
+var SBX=(window.top!==window.self)||(window.origin==="null"&&location.protocol!=="file:");
+var MOB=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function nav(u){location.href=u}
+function openUrl(u){var w=null;try{w=window.open(u,"_blank")}catch(e){}if(w){try{w.opener=null}catch(e){}}else{nav(u)}}
+function go(url,opt){var m=url.match(/^https:\/\/wa\.me\/(\d*)\?text=(.*)$/);
+ if(SBX){
+  if(m){var t=decodeURIComponent(m[2]),msg="Message copied"+(m[1]?" (send to +"+m[1]+")":"")+". Open WhatsApp and paste it (Ctrl+V).";
+   try{if(navigator.share){navigator.share({text:t}).catch(function(e){if(!e||e.name!=="AbortError")showLink(url,t,msg)});return}}catch(e){}
+   showLink(url,t,msg);return}
+  showLink(url,url,"Link copied. Paste it in a new browser tab (Ctrl+V).");return}
+ if(m){openUrl(MOB?url:"https://web.whatsapp.com/send?"+(m[1]?"phone="+m[1]+"&":"")+"text="+m[2]);return}
+ openUrl(url)}
+function cfg(){try{return JSON.parse(localStorage.getItem("satCfg")||"{}")}catch(e){return{}}}
+function bookPorter(p){copy(p.addr);var c=cfg(),web=c.web||"https://porter.in/";
+ if(SBX){showLink(web,null,"Drop address copied. Open Porter and paste it in the drop field.");return}
+ if(!MOB){openUrl(web);return}
+ if(c.app){nav(c.app);return}
+ if(/Android/i.test(navigator.userAgent)){nav("intent://porter.in/#Intent;scheme=https;package=com.theporter.android.customerapp;S.browser_fallback_url="+encodeURIComponent(web)+";end");return}
+ openUrl(web)}
+function showLink(u,t,msg){if(t)copy(t);$("lkT").textContent=msg;$("lkA").href=u;$("lk").style.display="block"}
+
+
+function openPorter(p){$("porP").value=HUBS[hubK].a;$("porD").value=p.addr;$("porM").classList.add("on")}
+$("porCp").onclick=function(){copy($("porP").value)};$("porCd").onclick=function(){copy($("porD").value)};
+$("porGo").onclick=function(){copy("Pickup: "+$("porP").value+NL+"Drop: "+$("porD").value);go("https://porter.in/","porter")};
+$("addBp").onclick=function(){$("addM").classList.add("on");$("aN").focus()};
+$("aGo").onclick=function(){var n=$("aN").value.trim();if(!n)return toast("Enter a name");rows.push({name:n,city:$("aC").value,block:$("aB").value,zone:"",emp:"",group:"",state:"",mobile:$("aM").value,owner:"",lat:"",lng:""});["aN","aB","aC","aM"].forEach(function(i){$(i).value=""});$("addM").classList.remove("on");dir();add(rows.length-1)};
+var llRi=-1;
+$("llGo").onclick=function(){var a=$("llI").value.split(",").map(function(x){return parseFloat(x)});if(a.length<2||isNaN(a[0])||isNaN(a[1]))return toast("Invalid format");rows[llRi].lat=a[0];rows[llRi].lng=a[1];$("llM").classList.remove("on");all()};
+var viewReal=true,_dm=drawMap,_rmSrc="";
+function rmUrl(){var p=pts(),f=function(x){return encodeURIComponent(x===p[0]?x.addr:(x.lat!=null&&!x.approx?x.lat+","+x.lng:(x.q||x.addr)))};
+ if(focus!=null&&p[focus])return"https://maps.google.com/maps?q="+f(p[focus])+"&z=15&output=embed";
+ if(!stops.length)return"https://maps.google.com/maps?q="+f(p[0])+"&z=12&output=embed";
+ return"https://maps.google.com/maps?saddr="+f(p[0])+"&daddr="+p.slice(1).map(f).join("+to:")+"&dirflg=d&output=embed"}
+function realMap(){var r=$("rm");r.style.display=viewReal?"block":"none";$("svg").style.display=viewReal?"none":"block";$("vw").textContent=viewReal?"Schematic View":"Real Map";
+ if(viewReal){var u=rmUrl();if(u!==_rmSrc){_rmSrc=u;r.src=u}}}
+drawMap=function(){_dm();realMap()};
+$("vw").onclick=function(){viewReal=!viewReal;drawMap()};
+var _s=$("sim").onclick;$("sim").onclick=function(){viewReal=false;drawMap();_s()};
+var _d=$("dirs").onclick;$("dirs").onclick=function(){if(SBX){viewReal=true;focus=null;drawMap();$("mapBox").scrollIntoView({behavior:"smooth",block:"center"});toast("Route shown on the real map")}else _d()};
+function qaddr(r){var p=[r.name,r.block,r.city,r.state].map(clean).filter(Boolean),o=[];p.forEach(function(x){if(!o.some(function(y){return y.toUpperCase().indexOf(x.toUpperCase())>-1}))o.push(x)});return o.join(", ")+", India"}
+$("llGo").onclick=function(){var v=$("llI").value,m=v.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||v.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/)||v.match(/(-?\d+\.\d+)\s+(-?\d+\.\d+)/);if(!m)return toast("Paste lat,lng or a full Google Maps link");rows[llRi].lat=parseFloat(m[1]);rows[llRi].lng=parseFloat(m[2]);$("llM").classList.remove("on");all()};
+var prevRi=null,svT=null;
+function refLine(r){return[r.block,r.city,r.zone,r.emp].map(clean).filter(Boolean).join(" · ")}
+function refHtml(r){var x=r&&r.x||{},k=Object.keys(x);if(!k.length)return"";return"<div class='ref'>"+k.map(function(a){return"<span><b>"+esc(a)+":</b> "+esc(x[a])+"</span>"}).join("")+"</div>"}
+function resHtml(i){var r=rows[i];return"<div class='sr' style='flex-wrap:wrap' data-ri='"+i+"'><div data-g='add' style='cursor:pointer;flex:1 1 180px'>"+esc(r.name)+"<small>"+esc(refLine(r))+"</small></div><div class='acts' style='margin:0'><button data-g='add'>+ Add</button><button class='o' data-g='prev'>Locate</button><button class='b' data-g='por'>Book via Porter</button><button class='wa' data-g='wa'>WhatsApp</button><button class='o' data-g='cp'>Copy Location</button></div></div>"}
+function match(q){var t=q.toLowerCase().split(/\s+/).filter(Boolean);return rows.map(function(r,i){return i}).filter(function(i){var r=rows[i],h=((r.all||"")+" "+r.name+" "+r.city+" "+r.block+" "+r.zone).toLowerCase();return t.every(function(w){return h.indexOf(w)>-1})})}
+$("q").oninput=function(){var q=this.value.trim();if(!q){$("res").innerHTML="";return}if(!rows.length){$("res").innerHTML="<div class='mu'>No BP data yet. Load your CSV in the Directory tab.</div>";return}$("res").innerHTML=match(q).slice(0,8).map(resHtml).join("")||"<div class='mu'>No results</div>"};
+function dir(){var q=$("dq").value.trim(),l=q?match(q):rows.map(function(r,i){return i});$("dn").textContent=rows.length;document.querySelector('[data-t="dir"]').textContent="Directory ("+rows.length+")";$("dlist").innerHTML=l.slice(0,200).map(resHtml).join("")+(l.length>200?"<div class='mu'>Showing the first 200. Use search to narrow down.</div>":"")||"<div class='mu'>No BP data loaded. Choose your DIWALI CSV above.</div>"}
+function load(text){var t=parse(text);if(t.length<2)return toast("No data found");var H=t[0].map(function(x){return x.trim()}),h=H.map(function(x){return x.toLowerCase()}),ix=function(n){return h.indexOf(n)};
+ var m={name:ix("bp name"),city:ix("city name"),block:ix("bill-to block"),zone:ix("zone name"),emp:ix("sales employee"),group:ix("group"),state:ix("state"),mobile:ix("mobile"),owner:ix("owner"),lat:ix("lat"),lng:ix("lng")};
+ if(m.name<0)return toast("Header must include BP Name");
+ rows=t.slice(1).map(function(r){var g=function(k){return k<0?"":(r[k]||"").trim()},x={};H.forEach(function(k,i){var v=(r[i]||"").trim();if(k&&v&&!/^(not found|not available)$/i.test(v))x[k]=v});
+  return{name:g(m.name),city:g(m.city),block:g(m.block),zone:g(m.zone),emp:g(m.emp),group:g(m.group),state:g(m.state),mobile:g(m.mobile),owner:g(m.owner),lat:g(m.lat),lng:g(m.lng),x:x,all:Object.keys(x).map(function(k){return x[k]}).join(" ")}}).filter(function(r){return r.name});
+ stops=[];selI=-1;prevRi=null;saveRows();dir();all();toast(rows.length+" BPs loaded")}
+function demo(){var H=["BP Name","City Name","Bill-to Block","Zone Name","Sales Employee","Group","State","Mobile"];rows=D.map(function(a){var x={};H.forEach(function(k,i){if(a[i])x[k]=a[i]});return{name:a[0],city:a[1],block:a[2],zone:a[3],emp:a[4],group:a[5],state:a[6],mobile:a[7],owner:"",lat:"",lng:"",x:x,all:Object.keys(x).map(function(k){return x[k]}).join(" ")}});rows._demo=1;stops=[];selI=-1;dir();all()}
+function loadSaved(){try{var a=JSON.parse(localStorage.getItem("satRows")||"[]");if(a&&a.length)rows=a}catch(e){}}
+function saveRows(){if(rows._demo)return;try{localStorage.setItem("satRows",JSON.stringify(rows))}catch(e){}}
+var _all=all;all=function(){_all();clearTimeout(svT);svT=setTimeout(saveRows,600)};
+var _ds=drawStops;drawStops=function(){_ds();document.querySelectorAll("#stops .stopc").forEach(function(el){var ri=stops[+el.dataset.k];el.querySelector(".sd").insertAdjacentHTML("beforeend",refHtml(rows[ri]))})};
+var _cd=card;card=function(){_cd();if(selI>=0&&stops[selI]!=null)$("card").insertAdjacentHTML("beforeend",refHtml(rows[stops[selI]]))};
+function qx(p){return p.lat!=null&&!p.approx?p.lat+","+p.lng:(p.q||p.addr)}
+function rmUrl(){var p=pts(),f=function(x){return encodeURIComponent(x===p[0]?x.addr:qx(x))};
+ if(prevRi!=null)return"https://maps.google.com/maps?q="+f(P(prevRi))+"&z=16&output=embed";
+ if(focus!=null&&p[focus])return"https://maps.google.com/maps?q="+f(p[focus])+"&z=16&output=embed";
+ if(!stops.length)return"https://maps.google.com/maps?q="+f(p[0])+"&z=12&output=embed";
+ return"https://maps.google.com/maps?saddr="+f(p[0])+"&daddr="+p.slice(1).map(f).join("+to:")+"&dirflg=d&output=embed"}
+function tgt(){return prevRi!=null?prevRi:(selI>=0&&stops[selI]!=null?stops[selI]:null)}
+function syncMq(){if(document.activeElement===$("mq"))return;var t=tgt();$("mq").value=t==null?"":P(t).q}
+var _rm=realMap;realMap=function(){_rm();syncMq()};
+function setMq(){var t=tgt();if(t==null)return toast("Select a stop, or tap Locate on a search result first");rows[t].mq=$("mq").value.trim();_rmSrc="";all()}
+$("mqGo").onclick=setMq;$("mq").onkeydown=function(e){if(e.key=="Enter")setMq()};
+var _st=$("stops").onclick;$("stops").onclick=function(e){prevRi=null;_st(e)};
+var _f=$("fit").onclick;$("fit").onclick=function(){prevRi=null;_f()};
+var _c=$("clr").onclick;$("clr").onclick=function(){prevRi=null;_c()};
+var eng="google",lmap=null,lyr=null,LL=false,_sig="",gq=[],gb=false;
+function geo(r){if(r.lat&&r.lng)return[+r.lat,+r.lng];if(r.g)return r.g;var t=(r.city+" "+r.block+" "+r.name).toUpperCase(),best=null,bl=0;for(var k in LOC){if(t.indexOf(k)>-1&&k.length>bl&&k!=="DELHI"){best=LOC[k];bl=k.length}}return best||(t.indexOf("DELHI")>-1||t.indexOf(",DL")>-1?LOC.DELHI:null)}
+function loadLeaf(){if(LL)return;LL=true;var l=document.createElement("link");l.rel="stylesheet";l.href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";document.head.appendChild(l);var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";s.onload=function(){drawLeaf()};s.onerror=function(){LL=false;toast("Could not load the map library. Check your internet.")};document.head.appendChild(s)}
+function needG(ri){var r=rows[ri];if((r.lat&&r.lng)||r.g!==undefined||gq.indexOf(ri)>-1)return;gq.push(ri);runG()}
+function runG(){if(gb||!gq.length)return;gb=true;var ri=gq.shift(),r=rows[ri],qs=[qaddr(r),addr(r)],k=0;
+ function done(){gb=false;_sig="";if(viewReal&&eng=="osm")drawLeaf();setTimeout(runG,1100)}
+ function t(){fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&q="+encodeURIComponent(qs[k])).then(function(x){return x.json()}).then(function(a){if(a&&a[0]){r.g=[+a[0].lat,+a[0].lon];done()}else if(++k<qs.length)setTimeout(t,1100);else{r.g=null;done()}}).catch(function(){gb=false})}
+ t()}
+function drawLeaf(){if(typeof L==="undefined"){loadLeaf();return}
+ if(!lmap){lmap=L.map("lf");(function(){var tl=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap contributors © CARTO"}).addTo(lmap);tl.on("tileerror",function(){if(!window._te){window._te=1;toast("Map tiles could not load. Check your internet connection.")}})})();lyr=L.layerGroup().addTo(lmap)}
+ lmap.invalidateSize();lyr.clearLayers();var p=prevRi!=null?[hub(),P(prevRi)]:pts(),ll=[];
+ p.forEach(function(x,i){if(i>0)needG(x.i);if(x.lat==null)return;var c=[x.lat,x.lng];ll.push(c);
+  var mk=L.marker(c,{draggable:i>0,icon:L.divIcon({className:"",iconSize:[26,26],iconAnchor:[13,13],html:"<div style='background:"+(i?"#d91f2f":"#7a0a14")+";color:#fff;border:2px solid #fff;border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font-weight:800;font-size:12px'>"+(i?(prevRi!=null?"P":i):"H")+"</div>"})}).addTo(lyr);
+  mk.bindTooltip(x.name+(i&&x.approx?" (approx, drag to fix)":""));
+  if(i>0)mk.on("dragend",function(e){var g=e.target.getLatLng();rows[x.i].lat=g.lat;rows[x.i].lng=g.lng;toast("Exact pin saved");all()})});
+ if(ll.length>1)L.polyline(ll,{color:"#d91f2f",weight:4,opacity:.8}).addTo(lyr);
+ var sg=p.map(function(x){return x.i}).join();if(sg!==_sig){_sig=sg;if(ll.length)lmap.fitBounds(ll,{padding:[30,30],maxZoom:15});else lmap.setView([28.6,77.3],10)}}
+function realMap(){var show=viewReal,g=show&&eng=="google"&&!SBX,o=show&&eng=="osm"&&!SBX,b=show&&SBX;
+ $("rm").style.display=g?"block":"none";$("lf").style.display=o?"block":"none";$("svg").style.display=(!show||b)?"block":"none";$("rmBlk").style.display=b?"block":"none";
+ $("vw").textContent=viewReal?"Schematic View":"Live Map";$("eng").textContent=eng=="google"?"OpenStreetMap":"Google Map";
+ if(g){var u=rmUrl();if(u!==_rmSrc){_rmSrc=u;$("rm").src=u}}
+ if(o)drawLeaf()}
+$("eng").onclick=function(){eng=eng=="google"?"osm":"google";viewReal=true;drawMap()};
+$("dirs").onclick=_d;
+$("cfgB").onclick=function(){var c=cfg();$("sWeb").value=c.web||"";$("sApp").value=c.app||"";$("cfgM").classList.add("on")};
+$("sSave").onclick=function(){var w=$("sWeb").value.trim(),a=$("sApp").value.trim();if(w&&!/^https?:\/\//i.test(w))return toast("Website link must start with https://");try{localStorage.setItem("satCfg",JSON.stringify({web:w,app:a}))}catch(e){}$("cfgM").classList.remove("on");toast("Settings saved")};
+$("ogm").onclick=function(){go(rmUrl().replace("&output=embed",""))};
+function refLine(r){var a=[];if(clean(r.city))a.push("City: "+clean(r.city));if(clean(r.block))a.push("Bill-to: "+clean(r.block));return a.join(" · ")}
+function refHtml(){return""}
+function card(){$("card").style.display="none"}
+function drawStops(){var t=totals();$("pTitle").textContent="Planned Stops ("+stops.length+" BP Orders)";$("hubBox").innerHTML=esc(HUBS[hubK].n)+"<small>"+esc(HUBS[hubK].a)+"</small>";
+ $("stops").innerHTML=stops.map(function(ri,k){var r=rows[ri],d=t.h[k];
+  return"<div class='stopc' data-k='"+k+"'><div class='stop"+(k==selI?" sel":"")+"'><div class='num'>"+(k+1)+"</div><div class='t'>"+esc(r.name)+"<small>"+esc(refLine(r))+"</small></div><button data-a='u'>▲</button><button data-a='d'>▼</button><button data-a='x'>🗑</button></div>"
+  +"<div class='sd'><div class='acts' style='margin-top:0'><button class='o' data-g='loc'>📍 Locate Map</button><button data-g='nav'>➤ Google Maps Nav</button><button class='b' data-g='por'>Book via Porter</button><button class='o' data-g='cp'>Copy Location</button><button class='wa' data-g='wa'>WhatsApp</button><button class='g' data-g='pin'>Request Pin</button><button class='o' data-g='ll'>Set lat,lng</button></div>"
+  +"<div class='mu' style='margin:6px 0'>Leg: <b class='km'>"+(d!=null?d.toFixed(1)+" km":"—")+"</b>"+(d!=null?" · ~"+fm(d/speed*60):"")+"</div></div></div>"}).join("")||"<div class='mu' style='padding:14px;text-align:center'>No stops. Search above to add.</div>"}
+function realMap(){var show=viewReal,g=show&&eng=="google"&&!SBX,o=show&&eng=="osm"&&!SBX,b=show&&SBX;
+ $("rm").style.display=g?"block":"none";$("lf").style.display=o?"block":"none";$("svg").style.display=(!show||b)?"block":"none";$("rmBlk").style.display=b?"block":"none";
+ [["bG",show&&eng=="google"],["bS",show&&eng=="osm"],["bV",!show]].forEach(function(a){$(a[0]).className=a[1]?"on":"o"});
+ if(g){var u=rmUrl();if(u!==_rmSrc){_rmSrc=u;$("rm").src=u}}
+ if(o)drawLeaf()}
+$("bG").onclick=function(){eng="google";viewReal=true;drawMap()};
+$("bS").onclick=function(){eng="osm";viewReal=true;drawMap()};
+$("bV").onclick=function(){viewReal=false;drawMap()};
+/* trip sheet with hop list */
+function sheetCalc(){var prev=hub(),c=0,out=[];stops.forEach(function(ri){if(inc[ri]===false)return;var p=P(ri),d=hav(prev,p);c+=d||0;out.push({ri:ri,p:p,from:prev,d:d,c:c});prev=p});return{rows:out,km:c}}
+function renderSheet(){var h="",hh="",calc=sheetCalc(),mp={};calc.rows.forEach(function(x){mp[x.ri]=x});
+ stops.forEach(function(ri,k){var p=P(ri),on=inc[ri]!==false,x=mp[ri],d=x?x.d:null;
+  h+="<tr style='"+(on?"":"opacity:.4")+"'><td><input type='checkbox' data-i='"+ri+"' "+(on?"checked":"")+"></td><td class='km'>"+(k+1)+"</td><td><b>"+esc(p.name)+"</b><br><span class='mu'>"+esc(refLine(rows[ri]))+"</span></td><td><b>"+esc(p.emp||"—")+"</b><br><span class='mu'>Owner: "+esc(p.owner||"—")+"</span></td><td>"+esc(p.mob||"—")+"</td><td class='r km'>"+(on&&d!=null?d.toFixed(1)+" km":"—")+"</td><td class='r'>"+(on&&d!=null?"~"+fm(d/speed*60):"—")+"</td><td><input type='text' data-cr='"+ri+"' value='"+(cr[ri]||12)+"' style='width:54px;padding:4px'></td><td class='noprint'><button data-g='nav' data-ri='"+ri+"'>G-Maps</button> <button class='b' data-g='por' data-ri='"+ri+"'>Porter</button></td><td style='min-width:90px;border-bottom:1px dashed #999'></td></tr>"});
+ calc.rows.forEach(function(x,i){hh+="<tr><td><span class='num'>"+(i+1)+"</span></td><td><b>"+esc(x.from.name)+"</b></td><td><b>"+esc(x.p.name)+"</b></td><td class='r km'>"+(x.d!=null?x.d.toFixed(1)+" km":"—")+"</td><td class='r'>"+(x.d!=null?"~"+fm(x.d/speed*60):"—")+"</td><td class='r'><b>"+x.c.toFixed(1)+" km</b></td></tr>"});
+ $("shB").innerHTML=h||"<tr><td colspan='10' class='mu'>No stops. Add stops first.</td></tr>";
+ $("shH").innerHTML=hh||"<tr><td colspan='6' class='mu'>No hops yet</td></tr>";
+ $("shSum").innerHTML="&nbsp; "+calc.rows.length+" of "+stops.length+" Drops Included · Trip Distance: <b class='km'>"+calc.km.toFixed(1)+" km</b> · Transit Time: <b>"+fm(calc.km/speed*60)+"</b>"}
+/* PDF writer (no library) */
+function pdfSafe(s){return String(s==null?"":s).replace(/[^\x20-\x7E]/g,"").trim()}
+function tw(s,sz,b){var w=0;for(var i=0;i<s.length;i++){var c=s[i];w+=/[il.,:;!'|jtfI ]/.test(c)?.3:/[A-Z0-9mwMW@%&]/.test(c)?.68:.54}return w*sz*(b?1.06:1)}
+function wrapT(s,w,sz,b){s=pdfSafe(s);if(!s)return[""];var out=[],cur="";s.split(/\s+/).forEach(function(wd){while(tw(wd,sz,b)>w&&wd.length>1){var k=wd.length;while(k>1&&tw(wd.slice(0,k),sz,b)>w)k--;if(cur){out.push(cur);cur=""}out.push(wd.slice(0,k));wd=wd.slice(k)}var t=cur?cur+" "+wd:wd;if(tw(t,sz,b)>w&&cur){out.push(cur);cur=wd}else cur=t});if(cur)out.push(cur);return out}
+function mkPdf(){var pages=[],cur=null,H=595;
+ var e=function(s){return s.replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)")},n=function(v){return(+v).toFixed(2)};
+ return{page:function(){cur=[];pages.push(cur)},
+  text:function(x,y,s,sz,b,c){c=c||[0,0,0];cur.push("BT /"+(b?"F2":"F1")+" "+sz+" Tf "+c.join(" ")+" rg "+n(x)+" "+n(H-y)+" Td ("+e(pdfSafe(s))+") Tj ET")},
+  rect:function(x,y,w,h,fill,stroke,dash){var o="q ";if(fill)o+=fill.join(" ")+" rg ";if(stroke)o+=stroke.join(" ")+" RG 0.6 w ";if(dash)o+="[3 3] 0 d ";cur.push(o+n(x)+" "+n(H-y-h)+" "+n(w)+" "+n(h)+" re "+(fill&&stroke?"B":fill?"f":"S")+" Q")},
+  line:function(x1,y1,x2,y2,c){cur.push("q "+(c||[.8,.8,.8]).join(" ")+" RG 0.5 w "+n(x1)+" "+n(H-y1)+" m "+n(x2)+" "+n(H-y2)+" l S Q")},
+  mark:function(){var a=20*Math.PI/180,co=Math.cos(a),si=Math.sin(a);cur.push("q "+n(co)+" "+n(si)+" "+n(-si)+" "+n(co)+" 175 205 cm BT /F2 110 Tf 0.98 0.91 0.91 rg 0 0 Td (SATMOLA) Tj ET Q")},
+  blob:function(){var objs=[],np=pages.length;objs[1]="<< /Type /Catalog /Pages 2 0 R >>";var kids=[];for(var i=0;i<np;i++)kids.push((5+i*2)+" 0 R");
+   objs[2]="<< /Type /Pages /Kids ["+kids.join(" ")+"] /Count "+np+" >>";objs[3]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";objs[4]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
+   pages.forEach(function(p,i){var st=p.join("\n");objs[5+i*2]="<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+(6+i*2)+" 0 R >>";objs[6+i*2]="<< /Length "+st.length+" >>\nstream\n"+st+"\nendstream"});
+   var out="%PDF-1.4\n",off=[];for(var k=1;k<objs.length;k++){off[k]=out.length;out+=k+" 0 obj\n"+objs[k]+"\nendobj\n"}
+   var x=out.length;out+="xref\n0 "+objs.length+"\n0000000000 65535 f \n";for(k=1;k<objs.length;k++)out+=("0000000000"+off[k]).slice(-10)+" 00000 n \n";
+   out+="trailer\n<< /Size "+objs.length+" /Root 1 0 R >>\nstartxref\n"+x+"\n%%EOF";return new Blob([out],{type:"application/pdf"})}}}
+function buildPdf(){var P=mkPdf(),calc=sheetCalc(),y=0,L=28,TW=786,RED=[.78,.1,.16];
+ function head(first){P.page();P.mark();if(first){P.text(L,34,"SATMOLA NAMKEEN - LOGISTICS",15,1,RED);P.text(L,51,"TRIP DELIVERY CHALLAN & DISPATCH SHEET",12,1,RED);P.text(L,64,"Hub: "+HUBS[hubK].n+" | "+HUBS[hubK].a,8,0,[.3,.3,.3]);y=74}else{P.text(L,30,"SATMOLA TRIP SHEET (continued) - "+$("tId").value,9,1,RED);y=42}}
+ function table(heads,ws,data){var sum=ws.reduce(function(a,b){return a+b},0);
+  function th(){P.rect(L,y,sum,16,[.99,.92,.92]);var x=L;heads.forEach(function(t,i){P.text(x+4,y+11,t,7,1,RED);x+=ws[i]});y+=16}
+  th();data.forEach(function(r){var cells=r.map(function(c,i){return wrapT(c,ws[i]-8,8,0)}),h=Math.max.apply(0,cells.map(function(a){return a.length}))*10+8;
+   if(y+h>555){head(false);th()}
+   var x=L;cells.forEach(function(a,i){a.forEach(function(t,j){P.text(x+4,y+11+j*10,t,8,0)});x+=ws[i]});P.line(L,y+h,L+sum,y+h);y+=h})}
+ head(true);
+ var f=[["Trip ID",$("tId").value],["Date",$("tDt").value],["Driver",$("tDr").value],["Mobile",$("tDm").value],["Vehicle",$("tVn").value],["Fleet",$("tFl").value]].map(function(a){return a[0]+": "+(a[1]||"-")}).join("    ");
+ wrapT(f,TW,8.5,1).forEach(function(t){P.text(L,y+8,t,8.5,1);y+=12});
+ P.text(L,y+10,calc.rows.length+" of "+stops.length+" drops included  |  Trip distance: "+calc.km.toFixed(1)+" km  |  Transit time: "+fm(calc.km/speed*60)+" at "+speed+" km/h",8.5,0,[.3,.3,.3]);y+=20;
+ table(["#","BUSINESS PARTNER","CITY / BILL-TO","MOBILE","HOP","LEG TIME","CRATES","SIGNATURE"],[22,190,170,84,50,66,40,164],calc.rows.map(function(x,i){var r=rows[x.ri];return[String(i+1),r.name,[clean(r.city),clean(r.block)].filter(Boolean).join(" / "),r.mobile||"-",x.d!=null?x.d.toFixed(1)+" km":"-",x.d!=null?"~"+fm(x.d/speed*60):"-",String(cr[x.ri]||12),""]}));
+ y+=14;if(y>500){head(false)}
+ P.text(L,y+8,"HOP DISTANCE TRACKER & TRAVEL TIME",10,1,RED);y+=14;
+ table(["HOP","FROM","TO","DISTANCE","TRAVEL TIME","CUMULATIVE"],[30,250,250,80,80,96],calc.rows.map(function(x,i){return[String(i+1),x.from.name,x.p.name,x.d!=null?x.d.toFixed(1)+" km":"-",x.d!=null?"~"+fm(x.d/speed*60):"-",x.c.toFixed(1)+" km"]}));
+ y+=18;if(y>490){head(false);y+=6}
+ ["Driver Signature","Dispatch Supervisor Signature","Security Gate Outward Stamp"].forEach(function(t,i){var x=L+i*266;P.rect(x,y,254,54,null,[.6,.6,.6],1);P.text(x+127-tw(t,8,1)/2,y+46,t,8,1)});
+ return P.blob()}
+function savePdf(blob,name){name=name.replace(/[^\w.\-]/g,"_");
+ var fb=function(){var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a)},800);toast("PDF downloaded")};
+ if(window.claude&&window.claude.use){window.claude.use("downloads").then(function(d){if(!d){fb();return}d.save({filename:name,data:blob}).then(function(){toast("PDF saved")},function(e){if(e&&e.code=="declined")toast("Save cancelled");else fb()})},function(){fb()})}else fb()}
+$("shPdf").onclick=function(){if(!stops.length)return toast("Add stops first");try{savePdf(buildPdf(),($("tId").value||"trip-sheet")+".pdf")}catch(e){toast("PDF could not be created")}};
+$("shPr").onclick=function(){if(SBX){toast("Print is blocked inside Claude. Use Save as PDF, then print the file.");return}try{window.print()}catch(e){toast("Press Ctrl+P to print")}};
+function nearestRest(list,i){var best=null,bd=1e18;for(var j=i+1;j<list.length;j++){var d=hav(list[i].p,list[j].p);if(d!=null&&d<bd){bd=d;best=list[j]}}return best?{p:best.p,d:bd}:null}
+function renderSheet(){var calc=sheetCalc(),mp={},h="";calc.rows.forEach(function(x,i){x.n=i+1;mp[x.ri]=x});
+ stops.forEach(function(ri){var x=mp[ri];
+  if(x){var nn=nearestRest(calc.rows,x.n-1);h+="<tr><td><input type='checkbox' data-i='"+ri+"' checked></td><td class='km'>"+x.n+"</td><td>"+esc(x.from.name)+"</td><td><b>"+esc(x.p.name)+"</b></td><td class='r km'>"+(x.d!=null?x.d.toFixed(1)+" km":"—")+"</td><td class='r'>"+(x.d!=null?"~"+fm(x.d/speed*60):"—")+"</td><td class='r'><b>"+x.c.toFixed(1)+" km</b></td><td>"+(nn?esc(nn.p.name)+" <span class='mu'>("+nn.d.toFixed(1)+" km)</span>":"<span class='mu'>last drop</span>")+"</td></tr>"}
+  else h+="<tr style='opacity:.45'><td><input type='checkbox' data-i='"+ri+"'></td><td>—</td><td colspan='6'>"+esc(P(ri).name)+" (not included)</td></tr>"});
+ $("shB").innerHTML=h||"<tr><td colspan='8' class='mu'>No stops. Add stops first.</td></tr>";
+ var pp=[hub()].concat(calc.rows.map(function(x){return x.p})),m="<thead><tr><th>POINT</th>"+pp.map(function(_,i){return"<th class='r'>"+(i?i:"H")+"</th>"}).join("")+"</tr></thead><tbody>";
+ pp.forEach(function(a,i){var ds=pp.map(function(b,j){return i==j?null:hav(a,b)}),mn=1e18;ds.forEach(function(d,j){if(d!=null&&j>0&&d<mn)mn=d});
+  m+="<tr><td><b>"+(i?i:"H")+"</b> "+esc(a.name)+"</td>"+ds.map(function(d,j){return"<td class='r"+(d!=null&&j>0&&d===mn?" km":"")+"'>"+(d==null?(i==j?"–":"—"):(d===mn&&j>0?"<b>"+d.toFixed(1)+"</b>":d.toFixed(1)))+"</td>"}).join("")+"</tr>"});
+ $("shM").innerHTML=m+"</tbody>";
+ $("shSum").innerHTML="&nbsp; "+calc.rows.length+" of "+stops.length+" Drops Included · Trip Distance: <b class='km'>"+calc.km.toFixed(1)+" km</b> · Transit Time: <b>"+fm(calc.km/speed*60)+"</b>"}
+function sheetText(){var c=sheetCalc(),s="TRIP SHEET ("+hubK+")"+NL+"Trip: "+$("tId").value+" | Date: "+$("tDt").value+NL+"Driver: "+$("tDr").value+" "+$("tDm").value+" | Vehicle: "+$("tVn").value+NL+NL;
+ c.rows.forEach(function(x,i){s+=(i+1)+". "+x.from.name+" -> "+x.p.name+NL+"   "+(x.d!=null?x.d.toFixed(1)+" km (~"+fm(x.d/speed*60)+")":"distance n/a")+" | total "+x.c.toFixed(1)+" km"+NL+NL});
+ return s+"Total: "+c.km.toFixed(1)+" km - "+fm(c.km/speed*60)}
+function buildPdf(){var P=mkPdf(),calc=sheetCalc(),y=0,L=28,TW=786,RED=[.78,.1,.16];
+ function head(first){P.page();P.mark();if(first){P.text(L,34,"SATMOLA NAMKEEN - LOGISTICS",15,1,RED);P.text(L,51,"TRIP SHEET - VISIT ORDER & DISTANCES",12,1,RED);P.text(L,64,"Hub: "+HUBS[hubK].n+" | "+HUBS[hubK].a,8,0,[.3,.3,.3]);y=74}else{P.text(L,30,"SATMOLA TRIP SHEET (continued) - "+$("tId").value,9,1,RED);y=42}}
+ function th(heads,ws,sum){P.rect(L,y,sum,16,[.99,.92,.92]);var x=L;heads.forEach(function(t,i){P.text(x+4,y+11,t,7,1,RED);x+=ws[i]});y+=16}
+ function table(heads,ws,data){var sum=ws.reduce(function(a,b){return a+b},0);th(heads,ws,sum);
+  data.forEach(function(r){var cells=r.map(function(c,i){return wrapT(c,ws[i]-8,8,0)}),h=Math.max.apply(0,cells.map(function(a){return a.length}))*10+8;
+   if(y+h>555){head(false);th(heads,ws,sum)}
+   var x=L;cells.forEach(function(a,i){a.forEach(function(t,j){P.text(x+4,y+11+j*10,t,8,0)});x+=ws[i]});P.line(L,y+h,L+sum,y+h);y+=h})}
+ head(true);
+ var f=[["Trip ID",$("tId").value],["Date",$("tDt").value],["Driver",$("tDr").value],["Mobile",$("tDm").value],["Vehicle",$("tVn").value],["Fleet",$("tFl").value]].map(function(a){return a[0]+": "+(a[1]||"-")}).join("    ");
+ wrapT(f,TW,8.5,1).forEach(function(t){P.text(L,y+8,t,8.5,1);y+=12});
+ P.text(L,y+10,calc.rows.length+" drops  |  Trip distance: "+calc.km.toFixed(1)+" km  |  Transit time: "+fm(calc.km/speed*60)+" at "+speed+" km/h",8.5,0,[.3,.3,.3]);y+=20;
+ table(["#","FROM","TO","DISTANCE","TIME","TOTAL","NEXT NEAREST POINT"],[24,190,190,66,76,66,174],calc.rows.map(function(x,i){var nn=nearestRest(calc.rows,i);return[String(i+1),x.from.name,x.p.name,x.d!=null?x.d.toFixed(1)+" km":"-",x.d!=null?"~"+fm(x.d/speed*60):"-",x.c.toFixed(1)+" km",nn?nn.p.name+" ("+nn.d.toFixed(1)+" km)":"last drop"]}));
+ y+=16;if(y>470)head(false);
+ P.text(L,y+8,"DISTANCE BETWEEN ALL POINTS (km)",10,1,RED);y+=14;
+ var pp=[hub()].concat(calc.rows.map(function(x){return x.p})),cap=16,sh=pp.slice(0,cap),cw=Math.min(52,(TW-170)/sh.length);
+ function mh(){P.rect(L,y,170+cw*sh.length,16,[.99,.92,.92]);P.text(L+4,y+11,"POINT",7,1,RED);sh.forEach(function(_,j){P.text(L+170+j*cw+4,y+11,j?String(j):"H",7,1,RED)});y+=16}
+ mh();
+ sh.forEach(function(a,i){if(y+14>555){head(false);mh()}
+  var ds=sh.map(function(b,j){return i==j?null:hav(a,b)}),mn=1e18;ds.forEach(function(d,j){if(d!=null&&j>0&&d<mn)mn=d});
+  P.text(L+4,y+10,(i?i:"H")+"  "+wrapT(a.name,160,7.5,0)[0],7.5,0);
+  ds.forEach(function(d,j){var nr=d!=null&&j>0&&d===mn;P.text(L+170+j*cw+4,y+10,d==null?"-":d.toFixed(1),7.5,nr,nr?RED:[0,0,0])});
+  P.line(L,y+14,L+170+cw*sh.length,y+14);y+=14});
+ if(pp.length>cap){P.text(L,y+10,"Matrix shows the first "+cap+" points only.",7.5,0,[.4,.4,.4]);y+=14}
+ y+=18;if(y>490){head(false);y+=6}
+ ["Driver Signature","Dispatch Supervisor Signature","Security Gate Outward Stamp"].forEach(function(t,i){var x=L+i*266;P.rect(x,y,254,54,null,[.6,.6,.6],1);P.text(x+127-tw(t,8,1)/2,y+46,t,8,1)});
+ return P.blob()}
+$("shPr").onclick=function(){if(!stops.length)return toast("Add stops first");if(SBX){toast("Print is blocked inside Claude, so the PDF is being saved. Open it and print.");$("shPdf").onclick();return}try{window.print()}catch(e){$("shPdf").onclick()}};
+$("bG").onclick=function(){eng="google";viewReal=true;drawMap();if(SBX)toast("Live Google Map works in the downloaded file or your own hosted link")};
+$("bS").onclick=function(){eng="osm";viewReal=true;drawMap();if(SBX)toast("Street Map works in the downloaded file or your own hosted link")};
+Object.assign(LOC,{"LONI GHAZIABAD":[28.7516,77.2886],"LONI":[28.7516,77.2886],"GHAZIABAD":[28.6692,77.4538],"SAHIBABAD":[28.6745,77.36],"INDIRAPURAM":[28.64,77.37],"VAISHALI":[28.65,77.34],"KAUSHAMBI":[28.64,77.325],"GURGAON":[28.4595,77.0266],"GURUGRAM":[28.4595,77.0266],"SONIPAT":[28.9931,77.0151],"BAHADURGARH":[28.6928,76.9355],"MEERUT":[28.9845,77.7064],"HAPUR":[28.7306,77.7759],"BALLABGARH":[28.3382,77.3236],"DILSHAD GARDEN":[28.683,77.321],"ANAND VIHAR":[28.6469,77.3159],"PREET VIHAR":[28.641,77.294],"LAXMI NAGAR":[28.63,77.277],"SEELAMPUR":[28.67,77.268],"NAND NAGRI":[28.684,77.315],"GOKULPURI":[28.704,77.287],"OKHLA":[28.5355,77.2755],"SARITA VIHAR":[28.5290,77.2900],"KALKAJI":[28.5494,77.2588],"SAKET":[28.5245,77.2066],"GREATER KAILASH":[28.5483,77.2380],"RAJOURI GARDEN":[28.6492,77.1217],"PITAMPURA":[28.7007,77.1318],"BADLI":[28.7440,77.1430],"NARELA":[28.8527,77.0929],"BAWANA":[28.7993,77.0327]});
+var gTried={},RD={},rdSig="",rdT=null;
+function gk(r){return r.name+"|"+r.city}
+function needG(ri){if(SBX)return;var r=rows[ri];if(!r||(r.lat&&r.lng)||r.g!==undefined||gTried[gk(r)])return;gTried[gk(r)]=1;gq.push(ri);runG()}
+function runG(){if(gb||!gq.length)return;gb=true;var ri=gq.shift(),r=rows[ri],qs=[qaddr(r),addr(r),[clean(r.city),clean(r.state),"India"].filter(Boolean).join(", ")],k=0;
+ function done(){gb=false;_sig="";all();setTimeout(runG,1100)}
+ function t(){fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&q="+encodeURIComponent(qs[k])).then(function(x){return x.json()}).then(function(a){if(a&&a[0]){r.g=[+a[0].lat,+a[0].lon];done()}else if(++k<qs.length)setTimeout(t,1100);else{r.g=null;done()}}).catch(function(){done()})}
+ t()}
+function rk(a,b){return a.lat.toFixed(4)+","+a.lng.toFixed(4)+"|"+b.lat.toFixed(4)+","+b.lng.toFixed(4)}
+function hav(a,b){if(a.lat==null||b.lat==null)return null;var k=rk(a,b);if(RD[k]!=null)return RD[k];var R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lng-a.lng)*r,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)*Math.sin(dn/2);return 2*R*Math.asin(Math.sqrt(x))*1.3}
+function roadFetch(){if(SBX)return;var p=pts().filter(function(x){return x.lat!=null});if(p.length<2||p.length>60)return;var sig=p.map(function(x){return x.lat.toFixed(4)+","+x.lng.toFixed(4)}).join(";");if(sig===rdSig)return;rdSig=sig;
+ fetch("https://router.project-osrm.org/table/v1/driving/"+p.map(function(x){return x.lng.toFixed(5)+","+x.lat.toFixed(5)}).join(";")+"?annotations=distance").then(function(r){return r.json()}).then(function(j){if(!j||!j.distances)return;p.forEach(function(a,i){p.forEach(function(b,k){var d=j.distances[i][k];if(i!=k&&d!=null)RD[rk(a,b)]=d/1000})});all()}).catch(function(){})}
+var _a8=all;all=function(){_a8();if(!SBX){stops.forEach(needG);clearTimeout(rdT);rdT=setTimeout(roadFetch,500)}};
+drawStops=_ds;
+function drawStops(){var t=totals();$("pTitle").textContent="Planned Stops ("+stops.length+" BP Orders)";$("hubBox").innerHTML=esc(HUBS[hubK].n)+"<small>"+esc(HUBS[hubK].a)+"</small>";
+ $("stops").innerHTML=stops.map(function(ri,k){var r=rows[ri],d=t.h[k],sel=k==selI;
+  return"<div class='stopc' data-k='"+k+"'><div class='stop"+(sel?" sel":"")+"'><div class='num'>"+(k+1)+"</div><div class='t'>"+esc(r.name)+"<small>"+esc(refLine(r))+"</small><small>Leg: <b class='km'>"+(d!=null?d.toFixed(1)+" km · ~"+fm(d/speed*60):((gq.length||gb)?"calculating…":"no location"))+"</b></small></div><button data-a='u'>▲</button><button data-a='d'>▼</button><button data-a='x'>🗑</button></div>"
+  +(sel?"<div class='sd'><div class='acts' style='margin-top:0'><button class='o' data-g='loc'>📍 Locate Map</button><button data-g='nav'>➤ Google Maps Nav</button><button class='b' data-g='por'>Book via Porter</button><button class='o' data-g='cp'>Copy Location</button><button class='wa' data-g='wa'>WhatsApp</button><button class='g' data-g='pin'>Request Pin</button><button class='o' data-g='ll'>Set lat,lng</button></div></div>":"")+"</div>"}).join("")||"<div class='mu' style='padding:14px;text-align:center'>No stops. Search above to add.</div>"}
+function drawHops(){var t=totals(),c=0,pend=(gq.length||gb);$("hops").innerHTML=t.h.map(function(d,i){var a=t.p[i],b=t.p[i+1],z=clean(b.zone),na=(a.lat==null||b.lat==null);if(d!=null)c+=d;var w=d==null?(na&&pend?"calculating…":"no location"):"";
+ return"<tr><td><span class='num'>"+(i+1)+"</span></td><td><b>"+esc(a.name)+"</b></td><td><b>"+esc(b.name)+"</b></td><td>"+(z?"<span class='tag'>"+esc(z)+"</span>":"")+"</td><td class='r km'>"+(d!=null?d.toFixed(1)+" km":w)+"</td><td class='r'>"+(d!=null?"~"+fm(d/speed*60):"—")+"</td><td class='r'><b>"+(d!=null?c.toFixed(1)+" km":"—")+"</b></td><td><button class='o' data-h='"+i+"'>Copy Link</button></td></tr>"}).join("")||"<tr><td colspan='8' class='mu'>No hops yet</td></tr>"}
+$("str").onclick=function(){$("t-map").classList.toggle("gbig")};
+/* Porter dispatch assistant */
+function bookPorter(p){var sv="";try{sv=localStorage.getItem("satPick")||""}catch(e){}
+ $("poP").value=sv||HUBS[hubK].a;$("poD").value=p.addr;$("poN").value=rows[p.i].name;$("poM2").value=(p.mob||"").split(",")[0].replace(/[^\d+ ]/g,"").trim();
+ try{var v=localStorage.getItem("satVeh");if(v)$("poV").value=v}catch(e){}
+ $("poM").classList.add("on")}
+$("poP").addEventListener("input",function(){try{localStorage.setItem("satPick",$("poP").value)}catch(e){}});
+$("poV").addEventListener("change",function(){try{localStorage.setItem("satVeh",$("poV").value)}catch(e){}});
+$("poM").onclick=function(e){var b=e.target.closest("[data-cp]");if(!b)return;var el=$(b.dataset.cp);copy(el.tagName=="SELECT"?el.options[el.selectedIndex].text:el.value)};
+function poText(){var v=$("poV");return"Pickup: "+$("poP").value+NL+"Drop: "+$("poD").value+NL+"Receiver: "+$("poN").value+(($("poM2").value)?", "+$("poM2").value:"")+NL+"Vehicle: "+v.options[v.selectedIndex].text}
+$("poAll").onclick=function(){copy(poText())};
+$("poGo").onclick=function(){var c=cfg(),web=c.web||"https://porter.in/trucks/delhi";copy($("poD").value);
+ if(SBX){showLink(web,null,"Drop address copied. Open Porter and paste it.");return}
+ if(!MOB){openUrl(web);return}
+ if(c.app){nav(c.app);return}
+ if(/Android/i.test(navigator.userAgent)){nav("intent://porter.in/trucks/delhi#Intent;scheme=https;package=com.theporter.android.customerapp;S.browser_fallback_url="+encodeURIComponent(web)+";end");return}
+ openUrl(web)};
+$("q").oninput=function(){var q=this.value.trim();if(!q){$("res").innerHTML="";return}if(!rows.length){$("res").innerHTML="<div class='mu'>No BP data yet. Load your CSV in the Directory tab.</div>";return}$("res").innerHTML=match(q).slice(0,60).map(resHtml).join("")||"<div class='mu'>No results</div>"};
+/* trip sheet: matrix only */
+function renderSheet(){var calc=sheetCalc(),pp=[hub()].concat(calc.rows.map(function(x){return x.p})),m="<thead><tr><th>POINT</th>"+pp.map(function(_,i){return"<th class='r'>"+(i?i:"H")+"</th>"}).join("")+"</tr></thead><tbody>";
+ pp.forEach(function(a,i){var ds=pp.map(function(b,j){return i==j?null:hav(a,b)}),mn=1e18;ds.forEach(function(d,j){if(d!=null&&j>0&&d<mn)mn=d});
+  m+="<tr><td><b>"+(i?i:"H")+"</b> "+esc(a.name)+"</td>"+ds.map(function(d,j){var nr=d!=null&&j>0&&d===mn;return"<td class='r"+(nr?" km":"")+"' style='"+(j==i+1?"background:rgba(245,163,10,.3);":"")+(nr?"font-weight:800":"")+"'>"+(d==null?(i==j?"–":"—"):d.toFixed(1))+"</td>"}).join("")+"</tr>"});
+ $("shM").innerHTML=m+"</tbody>";$("shB").innerHTML="";
+ $("shSum").innerHTML="&nbsp; "+calc.rows.length+" Drops · Trip Distance: <b class='km'>"+calc.km.toFixed(1)+" km</b> · Transit Time: <b>"+fm(calc.km/speed*60)+"</b>"}
+function buildPdf(){var P=mkPdf(),calc=sheetCalc(),y=0,L=28,TW=786,RED=[.78,.1,.16];
+ function head(first){P.page();P.mark();if(first){P.text(L,34,"SATMOLA NAMKEEN - LOGISTICS",15,1,RED);P.text(L,51,"TRIP SHEET - DISTANCE BETWEEN ALL POINTS",12,1,RED);P.text(L,64,"Hub: "+HUBS[hubK].n+" | "+HUBS[hubK].a,8,0,[.3,.3,.3]);y=74}else{P.text(L,30,"SATMOLA TRIP SHEET (continued) - "+$("tId").value,9,1,RED);y=42}}
+ head(true);
+ var f=[["Trip ID",$("tId").value],["Date",$("tDt").value],["Driver",$("tDr").value],["Mobile",$("tDm").value],["Vehicle",$("tVn").value]].map(function(a){return a[0]+": "+(a[1]||"-")}).join("    ");
+ wrapT(f,TW,8.5,1).forEach(function(t){P.text(L,y+8,t,8.5,1);y+=12});
+ P.text(L,y+10,calc.rows.length+" drops  |  Trip distance: "+calc.km.toFixed(1)+" km  |  Transit time: "+fm(calc.km/speed*60)+" at "+speed+" km/h  |  yellow = your route, red = nearest point",8.5,0,[.3,.3,.3]);y+=24;
+ var pp=[hub()].concat(calc.rows.map(function(x){return x.p})),cap=16,sh=pp.slice(0,cap),cw=Math.min(52,(TW-170)/sh.length);
+ function mh(){P.rect(L,y,170+cw*sh.length,16,[.99,.92,.92]);P.text(L+4,y+11,"POINT",7,1,RED);sh.forEach(function(_,j){P.text(L+170+j*cw+4,y+11,j?String(j):"H",7,1,RED)});y+=16}
+ mh();
+ sh.forEach(function(a,i){if(y+16>555){head(false);mh()}
+  var ds=sh.map(function(b,j){return i==j?null:hav(a,b)}),mn=1e18;ds.forEach(function(d,j){if(d!=null&&j>0&&d<mn)mn=d});
+  sh.forEach(function(_,j){if(j==i+1)P.rect(L+170+j*cw,y,cw,16,[1,.93,.7])});
+  P.text(L+4,y+11,(i?i:"H")+"  "+wrapT(a.name,160,7.5,0)[0],7.5,0);
+  ds.forEach(function(d,j){var nr=d!=null&&j>0&&d===mn;P.text(L+170+j*cw+4,y+11,d==null?"-":d.toFixed(1),7.5,nr,nr?RED:[0,0,0])});
+  P.line(L,y+16,L+170+cw*sh.length,y+16);y+=16});
+ if(pp.length>cap){P.text(L,y+10,"Matrix shows the first "+cap+" points only.",7.5,0,[.4,.4,.4]);y+=14}
+ y+=22;if(y>490){head(false);y+=6}
+ ["Driver Signature","Dispatch Supervisor Signature","Security Gate Outward Stamp"].forEach(function(t,i){var x=L+i*266;P.rect(x,y,254,54,null,[.6,.6,.6],1);P.text(x+127-tw(t,8,1)/2,y+46,t,8,1)});
+ return P.blob()}
+function mkPdf(W,H){W=W||842;H=H||595;var pages=[],cur=null;
+ var e=function(s){return s.replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)")},n=function(v){return(+v).toFixed(2)};
+ return{page:function(){cur=[];pages.push(cur)},
+  text:function(x,y,s,sz,b,c){c=c||[0,0,0];cur.push("BT /"+(b?"F2":"F1")+" "+sz+" Tf "+c.join(" ")+" rg "+n(x)+" "+n(H-y)+" Td ("+e(pdfSafe(s))+") Tj ET")},
+  rect:function(x,y,w,h,fill,stroke,dash){var o="q ";if(fill)o+=fill.join(" ")+" rg ";if(stroke)o+=stroke.join(" ")+" RG 0.6 w ";if(dash)o+="[3 3] 0 d ";cur.push(o+n(x)+" "+n(H-y-h)+" "+n(w)+" "+n(h)+" re "+(fill&&stroke?"B":fill?"f":"S")+" Q")},
+  rrect:function(x,y,w,h,r,fill,stroke,dash){var Y=H-y-h,k=.5523*r,o="q ";if(fill)o+=fill.join(" ")+" rg ";if(stroke)o+=stroke.join(" ")+" RG 1.2 w ";if(dash)o+="[3 3] 0 d ";
+   o+=n(x+r)+" "+n(Y)+" m "+n(x+w-r)+" "+n(Y)+" l "+n(x+w-r+k)+" "+n(Y)+" "+n(x+w)+" "+n(Y+r-k)+" "+n(x+w)+" "+n(Y+r)+" c "+n(x+w)+" "+n(Y+h-r)+" l "+n(x+w)+" "+n(Y+h-r+k)+" "+n(x+w-r+k)+" "+n(Y+h)+" "+n(x+w-r)+" "+n(Y+h)+" c "+n(x+r)+" "+n(Y+h)+" l "+n(x+r-k)+" "+n(Y+h)+" "+n(x)+" "+n(Y+h-r+k)+" "+n(x)+" "+n(Y+h-r)+" c "+n(x)+" "+n(Y+r)+" l "+n(x)+" "+n(Y+r-k)+" "+n(x+r-k)+" "+n(Y)+" "+n(x+r)+" "+n(Y)+" c h "+(fill&&stroke?"B":fill?"f":stroke?"S":"n")+" Q";cur.push(o)},
+  line:function(x1,y1,x2,y2,c){cur.push("q "+(c||[.85,.85,.85]).join(" ")+" RG 0.5 w "+n(x1)+" "+n(H-y1)+" m "+n(x2)+" "+n(H-y2)+" l S Q")},
+  mark:function(){var fs=W*.17,a=24*Math.PI/180,co=Math.cos(a),si=Math.sin(a),w=fs*5,tx=W/2-(w/2)*co+fs*.35*si,ty=H/2-(w/2)*si-fs*.35*co;cur.push("q "+n(co)+" "+n(si)+" "+n(-si)+" "+n(co)+" "+n(tx)+" "+n(ty)+" cm BT /F2 "+n(fs)+" Tf 0.985 0.92 0.92 rg 0 0 Td (SATMOLA) Tj ET Q")},
+  blob:function(){var objs=[],np=pages.length;objs[1]="<< /Type /Catalog /Pages 2 0 R >>";var kids=[];for(var i=0;i<np;i++)kids.push((5+i*2)+" 0 R");
+   objs[2]="<< /Type /Pages /Kids ["+kids.join(" ")+"] /Count "+np+" >>";objs[3]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";objs[4]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
+   pages.forEach(function(p,i){var st=p.join("\n");objs[5+i*2]="<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+W+" "+H+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+(6+i*2)+" 0 R >>";objs[6+i*2]="<< /Length "+st.length+" >>\nstream\n"+st+"\nendstream"});
+   var out="%PDF-1.4\n",off=[];for(var k=1;k<objs.length;k++){off[k]=out.length;out+=k+" 0 obj\n"+objs[k]+"\nendobj\n"}
+   var x=out.length;out+="xref\n0 "+objs.length+"\n0000000000 65535 f \n";for(k=1;k<objs.length;k++)out+=("0000000000"+off[k]).slice(-10)+" 00000 n \n";
+   out+="trailer\n<< /Size "+objs.length+" /Root 1 0 R >>\nstartxref\n"+x+"\n%%EOF";return new Blob([out],{type:"application/pdf"})}}}
+function fitT(s,w,sz,b){s=pdfSafe(s);if(tw(s,sz,b)<=w)return s;while(s.length>1&&tw(s+"..",sz,b)>w)s=s.slice(0,-1);return s.trim()+".."}
+function buildPdf(or){var land=or!=="p",W=land?842:595,H=land?595:842,P=mkPdf(W,H),calc=sheetCalc(),M=26,CW=W-2*M,y=0,RED=[.78,.1,.16];
+ function head(first){P.page();P.mark();y=M;
+  if(first){P.rrect(M,y,124,46,9,[.86,.12,.2],[.96,.64,.04]);var t1="SATMOLA",t2="NAMKEEN - LOGISTICS";P.text(M+62-tw(t1,19,1)/2,y+22,t1,19,1,[1,1,1]);P.text(M+62-tw(t2,6.5,1)/2,y+35,t2,6.5,1,[1,.9,.6]);
+   P.text(M+138,y+19,"TRIP SHEET - VISIT ORDER & DISTANCES",land?17:13,1,RED);P.text(M+138,y+35,"Hub: "+HUBS[hubK].n+" | "+HUBS[hubK].a,land?8.5:7,0,[.35,.35,.35]);y+=60}
+  else{P.text(M,y+12,"SATMOLA TRIP SHEET (continued) - "+$("tId").value,10,1,RED);y+=26}}
+ head(true);
+ var F=[["TRIP ID",$("tId").value],["DISPATCH DATE",$("tDt").value],["DRIVER NAME",$("tDr").value],["DRIVER MOBILE",$("tDm").value],["VEHICLE NO",$("tVn").value]],g=8,fw=(CW-g*4)/5;
+ F.forEach(function(f,i){var x=M+i*(fw+g);P.rrect(x,y,fw,38,8,null,[.96,.8,.4]);P.text(x+8,y+14,f[0],6.5,1,RED);var vs=land?10:8.5;while(vs>6.5&&tw(pdfSafe(f[1]||"-"),vs,1)>fw-14)vs-=.5;P.text(x+8,y+29,fitT(f[1]||"-",fw-14,vs,1),vs,1)});y+=50;
+ P.rrect(M,y,CW,26,8,[.99,.93,.93]);P.text(M+10,y+17,calc.rows.length+" Drops   |   Trip Distance: "+calc.km.toFixed(1)+" km   |   Transit Time: "+fm(calc.km/speed*60)+" at "+speed+" km/h",land?9.5:8.5,1,[.3,.3,.3]);y+=40;
+ var tt="DISTANCE BETWEEN ALL POINTS (km)";P.text(M,y+9,tt,12,1,RED);P.text(M+tw(tt,12,1)+10,y+9,"yellow = your route   |   red = nearest point",8,0,[.45,.45,.45]);y+=22;
+ var pp=[hub()].concat(calc.rows.map(function(x){return x.p})),cap=24,sh=pp.slice(0,cap),nn=sh.length,sigH=64,sigY=H-M-sigH,LW=land?Math.max(200,Math.min(300,CW-nn*60)):Math.max(150,Math.min(240,CW-nn*34)),cw=Math.min(150,(CW-LW)/nn),HH=24;
+ var avail=sigY-16-y-HH,rh=Math.max(17,Math.min(64,avail/nn)),fs=Math.max(6,Math.min(13,rh*.42,cw*.34+1.5)),tw2=LW+cw*nn;
+ function mh(){P.rect(M,y,tw2,HH,[.99,.92,.92]);P.text(M+6,y+15,"POINT",8,1,RED);sh.forEach(function(_,j){var s=j?String(j):"H";P.text(M+LW+j*cw+cw/2-tw(s,8.5,1)/2,y+15,s,8.5,1,RED)});y+=HH}
+ mh();
+ sh.forEach(function(a,i){if(y+rh>sigY-10){head(false);mh()}
+  var ds=sh.map(function(b,j){return i==j?null:hav(a,b)}),mn=1e18;ds.forEach(function(d,j){if(d!=null&&j>0&&d<mn)mn=d});
+  if(i+1<nn)P.rect(M+LW+(i+1)*cw,y,cw,rh,[1,.93,.7]);
+  var ty=y+rh/2+fs*.35;
+  var lf=Math.min(fs,10.5);P.text(M+6,y+rh/2+lf*.35,(i?i:"H")+"  "+fitT(a.name,LW-12-tw("00  ",lf,0),lf,0),lf,0);
+  ds.forEach(function(d,j){var nr=d!=null&&j>0&&d===mn,s=d==null?"-":d.toFixed(1);P.text(M+LW+j*cw+cw/2-tw(s,fs,nr)/2,ty,s,fs,nr,nr?RED:(d==null?[.6,.6,.6]:[0,0,0]))});
+  P.line(M,y+rh,M+tw2,y+rh);y+=rh});
+ if(pp.length>cap)P.text(M,y+12,"Matrix shows the first "+cap+" points only.",8,0,[.4,.4,.4]);
+ if(y>sigY-10)head(false);
+ var sw=(CW-16)/3;["Driver Signature","Dispatch Supervisor Signature","Security Gate Outward Stamp"].forEach(function(t,i){var x=M+i*(sw+8);P.rrect(x,sigY,sw,sigH,8,null,[.6,.6,.6],1);P.text(x+sw/2-tw(t,8.5,1)/2,sigY+sigH-10,t,8.5,1)});
+ return P.blob()}
+function setPage(){var v=$("shOr").value,st=document.getElementById("pgSt");if(!st){st=document.createElement("style");st.id="pgSt";document.head.appendChild(st)}st.textContent="@page{size:A4 "+(v=="p"?"portrait":"landscape")+";margin:8mm}";try{localStorage.setItem("satOr",v)}catch(e){}}
+try{var so=localStorage.getItem("satOr");if(so)$("shOr").value=so}catch(e){}
+setPage();$("shOr").onchange=setPage;
+$("shPdf").onclick=function(){if(!stops.length)return toast("Add stops first");try{savePdf(buildPdf($("shOr").value),($("tId").value||"trip-sheet")+".pdf")}catch(e){toast("PDF could not be created")}};
+$("shPr").onclick=function(){if(!stops.length)return toast("Add stops first");setPage();if(SBX){toast("Print is blocked inside Claude, so the PDF is being saved. Open it and print.");$("shPdf").onclick();return}try{window.print()}catch(e){$("shPdf").onclick()}};
+loadSaved();stops=[];dir();all();
+
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZX032zbv9PpgHzqRxtC2slN3bPrPOcypFxOVrsCkdq3F5_AAzZgXAUveQHIwHtzQ1gA/exec";
+function fetchLiveMaster() {
+  toast("Syncing live BP Master sheet...");
+  fetch(SCRIPT_URL)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!Array.isArray(data) || data.length === 0) return;
+      rows = data.map(function(r) {
+        var name = (r["BP Name"] || "").trim();
+        var city = (r["City Name"] || r["Ship-to City"] || "").trim();
+        var block = (r["Bill-to Block"] || "").trim();
+        var zone = (r["Zone Name"] || "").trim();
+        var emp = (r["Sales Employee"] || "").trim();
+        var group = (r["GRoup"] || "").trim();
+        var state = (r["State"] || "").trim();
+        var mobile = (r["Mobile"] || "").trim();
+        var owner = (r["Owner"] || "").trim();
+        var lat = parseFloat(r["Lat"]);
+        var lng = parseFloat(r["Lng"]);
+        return {
+          name: name,
+          city: city,
+          block: block,
+          zone: zone,
+          emp: emp,
+          group: group,
+          state: state,
+          mobile: mobile,
+          owner: owner,
+          lat: isFinite(lat) ? lat : "",
+          lng: isFinite(lng) ? lng : "",
+          all: (name + " " + city + " " + block + " " + zone + " " + emp + " " + mobile).toLowerCase()
+        };
+      }).filter(function(r) { return r.name; });
+      saveRows();
+      dir();
+      all();
+      toast("● " + rows.length + " BPs Loaded Live from Sheet!");
+    })
+    .catch(function(err) {
+      console.error("Live fetch error:", err);
+    });
+}
+window.addEventListener("DOMContentLoaded", fetchLiveMaster);
+
+</script></body></html>

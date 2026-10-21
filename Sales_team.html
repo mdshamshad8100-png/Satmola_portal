@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Satmola Logistics - Geolocation Portal</title>
+  <style>
+    :root {
+      --rd: #d91f2f;
+      --gd: #f5a30a;
+      --bg: #fdfaf7;
+      --cd: #ffffff;
+      --tx: #2a1a1a;
+      --mu: #7a6a60;
+      --ln: #ece3cc;
+      --gr: #0a8f63;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--tx);
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 14px;
+      max-width: 460px;
+      margin-inline: auto;
+    }
+    .hd {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--ln);
+    }
+    .logo {
+      background: linear-gradient(#e8283a, #b8101f);
+      border: 2px solid var(--gd);
+      border-radius: 10px;
+      color: #fff;
+      padding: 5px 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .logo small { display: block; font-size: 8px; color: #ffe6a0; }
+    h1 { font-size: 16px; margin: 0; color: var(--rd); line-height: 1.2; }
+    h1 small { display: block; font-size: 11px; color: var(--mu); font-weight: 500; }
+
+    .card {
+      background: var(--cd);
+      border: 1px solid var(--ln);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--mu);
+      text-transform: uppercase;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+    label:first-child { margin-top: 0; }
+    input, select {
+      width: 100%;
+      padding: 11px;
+      border: 1.5px solid var(--ln);
+      border-radius: 9px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+      color: var(--tx);
+    }
+    input:focus, select:focus { border-color: var(--rd); }
+
+    .btn-gps {
+      width: 100%;
+      background: #fff7eb;
+      border: 2px dashed var(--gd);
+      color: #8f5300;
+      padding: 13px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .gps-box {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f4efe0;
+      font-size: 12px;
+      display: none;
+    }
+    .gps-box.ok { display: block; border-left: 4px solid var(--gr); }
+    .gps-box.err { display: block; border-left: 4px solid var(--rd); background: #fde8e8; color: var(--rd); }
+
+    .toggle-paste {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      color: var(--mu);
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      background: none;
+      border: 0;
+      width: 100%;
+      padding: 4px 0;
+    }
+
+    .paste-container {
+      display: none;
+      margin-top: 8px;
+      padding: 10px;
+      background: #faf6f0;
+      border: 1px dashed var(--ln);
+      border-radius: 10px;
+    }
+
+    .btn-sub {
+      width: 100%;
+      background: var(--rd);
+      border: 0;
+      color: #fff;
+      padding: 13px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 16px;
+      box-shadow: 0 4px 12px rgba(217,31,47,0.25);
+    }
+    .btn-sub:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      background: #222;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 99px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s;
+      z-index: 99;
+    }
+    .toast.on { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="hd">
+    <div class="logo">SATMOLA<small>LOGISTICS</small></div>
+    <h1>Partner Geolocation Portal<small>Field Dispatch & Routing System</small></h1>
+  </div>
+
+  <div class="card">
+    <label>Sales Officer / Representative</label>
+    <select id="rep">
+      <option value="">-- Select Representative --</option>
+      <option value="SUMAN P.">SUMAN P.</option>
+      <option value="Amit Mishra">Amit Mishra</option>
+      <option value="RASHID">RASHID</option>
+      <option value="PUSHKAR S.">PUSHKAR S.</option>
+      <option value="TARUN KUMAR">TARUN KUMAR</option>
+      <option value="AMRENDRA KUMAR">AMRENDRA KUMAR</option>
+      <option value="Operations Desk">Operations Desk / Logistics Admin</option>
+    </select>
+
+    <label>Business Partner (BP) Name</label>
+    <input type="text" id="bpName" placeholder="e.g. A D TRADERS, CHANDNI CHOWK" required>
+
+    <label>Billing Block / Area / City</label>
+    <input type="text" id="city" placeholder="e.g. Chandni Chowk, Central Delhi" required>
+
+    <label>Contact Number (Optional)</label>
+    <input type="tel" id="mobile" placeholder="e.g. +91 9899XXXXXX">
+
+    <!-- Primary Action: 1-Click Satellite GPS -->
+    <button type="button" class="btn-gps" id="btnGps">
+      📍 Acquire Store GPS Coordinates
+    </button>
+    <div class="gps-box" id="gpsBox"></div>
+
+    <!-- Secondary Action: Professional Manual URL Option -->
+    <button type="button" class="toggle-paste" id="togglePaste">
+      + Enter Google Maps URL / Coordinates manually
+    </button>
+
+    <div class="paste-container" id="pasteSec">
+      <label style="margin-top:0;">Maps Location Link or Lat,Lng</label>
+      <input type="text" id="waInput" placeholder="Paste link (maps.app.goo.gl) or coordinates (e.g. 28.6506, 77.2303)">
+      <div class="gps-box" id="pasteBox"></div>
+    </div>
+
+    <!-- Clean Submit Button -->
+    <button type="button" class="btn-sub" id="btnSub" disabled>
+      Submit Location
+    </button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZX032zbv9PpgHzqRxtC2slN3bPrPOcypFxOVrsCkdq3F5_AAzZgXAUveQHIwHtzQ1gA/exec";
+
+    var curLoc = null;
+    var $ = function(id) { return document.getElementById(id); };
+
+    function toast(msg) {
+      var t = $("toast");
+      t.textContent = msg;
+      t.className = "toast on";
+      setTimeout(function() { t.className = "toast"; }, 2400);
+    }
+
+    function checkReady() {
+      $("btnSub").disabled = (curLoc == null);
+    }
+
+    // Toggle Manual Input Section
+    $("togglePaste").onclick = function() {
+      var s = $("pasteSec");
+      var isHidden = (s.style.display === "none" || !s.style.display);
+      s.style.display = isHidden ? "block" : "none";
+      this.textContent = isHidden ? "− Hide manual coordinates input" : "+ Enter Google Maps URL / Coordinates manually";
+    };
+
+    // Live Satellite GPS Capture
+    $("btnGps").onclick = function() {
+      if (!navigator.geolocation) {
+        return alert("Geolocation services are not supported by this browser. Please use Chrome or Safari.");
+      }
+      $("gpsBox").className = "gps-box ok";
+      $("gpsBox").innerHTML = "⏳ Establishing satellite link... Please hold.";
+
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          curLoc = {
+            lat: pos.coords.latitude.toFixed(6),
+            lng: pos.coords.longitude.toFixed(6),
+            accuracy: Math.round(pos.coords.accuracy)
+          };
+          $("gpsBox").className = "gps-box ok";
+          $("gpsBox").innerHTML = "<b>🟢 Coordinates Verified</b> (Accuracy: ±" + curLoc.accuracy + "m)<br>Lat: " + curLoc.lat + ", Lng: " + curLoc.lng;
+          checkReady();
+        },
+        function(err) {
+          curLoc = null;
+          checkReady();
+          $("gpsBox").className = "gps-box err";
+          $("gpsBox").innerHTML = "❌ Position Error: " + err.message + ". Please verify device Location/GPS is active and browser permissions are granted.";
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    };
+
+    // Paste Input Parser
+    $("waInput").oninput = function() {
+      var v = this.value.trim();
+      var box = $("pasteBox");
+
+      var m = v.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || 
+              v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+              v.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+              v.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+
+      if (m) {
+        curLoc = {
+          lat: parseFloat(m[1]).toFixed(6),
+          lng: parseFloat(m[2]).toFixed(6),
+          accuracy: 10
+        };
+        box.className = "gps-box ok";
+        box.innerHTML = "<b>✓ Geographic Coordinates Parsed</b><br>Lat: " + curLoc.lat + ", Lng: " + curLoc.lng;
+        checkReady();
+      } else if (v.indexOf("http") === 0) {
+        curLoc = {
+          lat: "",
+          lng: "",
+          link: v,
+          accuracy: 0
+        };
+        box.className = "gps-box ok";
+        box.innerHTML = "<b>✓ Location URL Stored</b>";
+        checkReady();
+      } else {
+        curLoc = null;
+        box.className = "gps-box err";
+        box.innerHTML = "⚠️ Please enter a valid URL or geographic decimal coordinates.";
+        checkReady();
+      }
+    };
+
+    // Form Submission
+    $("btnSub").onclick = function() {
+      var rep = $("rep").value;
+      var bpName = $("bpName").value.trim();
+      var city = $("city").value.trim();
+      var mobile = $("mobile").value.trim();
+
+      if (!rep) return toast("Select Sales Officer");
+      if (!bpName) return toast("Enter BP / Partner Name");
+      if (!city) return toast("Enter Location / Area");
+      if (!curLoc) return toast("Location coordinates required");
+
+      $("btnSub").disabled = true;
+      $("btnSub").textContent = "Transmitting record...";
+
+      var payload = {
+        rep: rep,
+        bpName: bpName,
+        city: city,
+        mobile: mobile,
+        lat: curLoc.lat || "",
+        lng: curLoc.lng || "",
+        accuracy: curLoc.accuracy || 0,
+        mapsUrl: curLoc.link || ""
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(function() {
+        toast("✓ Location successfully updated in Master!");
+        $("btnSub").textContent = "Record Saved";
+        setTimeout(function() {
+          $("bpName").value = "";
+          $("city").value = "";
+          $("mobile").value = "";
+          $("waInput").value = "";
+          $("gpsBox").className = "gps-box";
+          $("gpsBox").innerHTML = "";
+          $("pasteBox").className = "gps-box";
+          $("pasteBox").innerHTML = "";
+          $("btnSub").textContent = "Submit Location";
+          curLoc = null;
+          checkReady();
+        }, 1800);
+      })
+      .catch(function(err) {
+        alert("Transmission Error: " + err);
+        $("btnSub").disabled = false;
+        $("btnSub").textContent = "Submit Location";
+      });
+    };
+  </script>
+</body>
+</html>
