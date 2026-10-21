@@ -701,4 +701,65 @@ function fetchLiveMaster() {
 }
 window.addEventListener("DOMContentLoaded", fetchLiveMaster);
 
+function parseCoordsFromUrl(url) {
+  if (!url) return null;
+  var m = url.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+          url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+          url.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+  return m ? [parseFloat(m[1]), parseFloat(m[2])] : null;
+}
+
+function fetchLiveMaster() {
+  toast("Syncing live BP Master sheet...");
+  fetch(SCRIPT_URL)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var arr = Array.isArray(data) ? data : (data.bpList ? [] : []);
+      if (!arr.length) return;
+      rows = arr.map(function(r) {
+        var name = (r["BP Name"] || "").trim();
+        var city = (r["City Name"] || r["Ship-to City"] || "").trim();
+        var block = (r["Bill-to Block"] || "").trim();
+        var zone = (r["Zone Name"] || "").trim();
+        var emp = (r["Sales Employee"] || "").trim();
+        var group = (r["GRoup"] || "").trim();
+        var state = (r["State"] || "").trim();
+        var mobile = (r["Mobile"] || "").trim();
+        var owner = (r["Owner"] || "").trim();
+        var mapLink = (r["Map Hyperlink"] || "").trim();
+        
+        var lat = parseFloat(r["Latitude"] || r["Lat"]);
+        var lng = parseFloat(r["Longitude"] || r["Lng"]);
+        
+        // Agar Lat/Lng blank hai lekin Hyperlink maujood hai
+        if ((!isFinite(lat) || !isFinite(lng)) && mapLink) {
+          var parsed = parseCoordsFromUrl(mapLink);
+          if (parsed) { lat = parsed[0]; lng = parsed[1]; }
+        }
+        
+        return {
+          name: name,
+          city: city,
+          block: block,
+          zone: zone,
+          emp: emp,
+          group: group,
+          state: state,
+          mobile: mobile,
+          owner: owner,
+          lat: isFinite(lat) ? lat : "",
+          lng: isFinite(lng) ? lng : "",
+          mapLink: mapLink,
+          all: (name + " " + city + " " + block + " " + zone + " " + emp + " " + mobile).toLowerCase()
+        };
+      }).filter(function(r) { return r.name; });
+      saveRows();
+      dir();
+      all();
+      toast("● " + rows.length + " BPs Loaded Live with 100% Map Precision!");
+    })
+    .catch(function(err) {
+      console.error("Live fetch error:", err);
+    });
+}
 </script></body></html>

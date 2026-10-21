@@ -3,325 +3,749 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Satmola Logistics - Geolocation Portal</title>
+  <title>Satmola Logistics - Partner Geolocation Portal</title>
+  
+  <!-- Font Awesome Icons & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      --rd: #d91f2f;
-      --gd: #f5a30a;
-      --bg: #fdfaf7;
-      --cd: #ffffff;
-      --tx: #2a1a1a;
-      --mu: #7a6a60;
-      --ln: #ece3cc;
-      --gr: #0a8f63;
+      --rd-main: #d91f2f;
+      --rd-dark: #b8101f;
+      --gd-amber: #f5a30a;
+      --gd-light: #fff8eb;
+      --bg-page: #fdfaf7;
+      --card-bg: #ffffff;
+      --tx-main: #1e1313;
+      --tx-muted: #756357;
+      --border-line: #ede2d3;
+      --green-ok: #0a8f63;
+      --green-light: #eafaf1;
+      --shadow-soft: 0 10px 25px -4px rgba(217, 31, 47, 0.07), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 2px 6px rgba(0,0,0,0.04);
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--tx);
-      font-family: system-ui, -apple-system, sans-serif;
-      padding: 14px;
-      max-width: 460px;
+      background: var(--bg-page);
+      color: var(--tx-main);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      padding: 16px 14px 40px;
+      max-width: 480px;
       margin-inline: auto;
+      line-height: 1.45;
     }
+
+    /* TOP HEADER BRANDING */
     .hd {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid var(--ln);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border-line);
     }
-    .logo {
-      background: linear-gradient(#e8283a, #b8101f);
-      border: 2px solid var(--gd);
-      border-radius: 10px;
-      color: #fff;
-      padding: 5px 12px;
-      font-weight: 900;
-      letter-spacing: 1.5px;
+    .logo-badge {
+      background: linear-gradient(145deg, #ea283a, #b8101f);
+      border: 2px solid var(--gd-amber);
+      border-radius: 12px;
+      color: #ffffff;
+      padding: 6px 12px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(184, 16, 31, 0.25);
+      flex-shrink: 0;
     }
-    .logo small { display: block; font-size: 8px; color: #ffe6a0; }
-    h1 { font-size: 16px; margin: 0; color: var(--rd); line-height: 1.2; }
-    h1 small { display: block; font-size: 11px; color: var(--mu); font-weight: 500; }
+    .logo-badge small {
+      display: block;
+      font-size: 8px;
+      color: #ffe6a0;
+      letter-spacing: 2px;
+      font-weight: 700;
+    }
+    .hd-text h1 {
+      font-size: 16px;
+      margin: 0;
+      color: var(--rd-dark);
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      line-height: 1.2;
+    }
+    .hd-text small {
+      display: block;
+      font-size: 11px;
+      color: var(--tx-muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
 
+    /* MAIN CONTAINER CARD */
     .card {
-      background: var(--cd);
-      border: 1px solid var(--ln);
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      background: var(--card-bg);
+      border: 1px solid var(--border-line);
+      border-radius: 18px;
+      padding: 18px 16px;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 16px;
+    }
+
+    .form-group {
       margin-bottom: 14px;
     }
+    .form-group:last-of-type {
+      margin-bottom: 6px;
+    }
+
     label {
       display: block;
       font-size: 11px;
       font-weight: 700;
-      color: var(--mu);
+      color: var(--tx-muted);
       text-transform: uppercase;
-      margin-top: 12px;
-      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
     }
-    label:first-child { margin-top: 0; }
-    input, select {
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    /* INPUTS & SELECT */
+    input[type="text"],
+    input[type="tel"],
+    select {
       width: 100%;
-      padding: 11px;
-      border: 1.5px solid var(--ln);
-      border-radius: 9px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border-line);
+      border-radius: 12px;
       font-size: 14px;
       outline: none;
-      background: #fff;
-      color: var(--tx);
+      background: #ffffff;
+      color: var(--tx-main);
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
     }
-    input:focus, select:focus { border-color: var(--rd); }
+    input::placeholder {
+      color: #9c8b80;
+      font-weight: 400;
+    }
+    input:focus, select:focus {
+      border-color: var(--rd-main);
+      box-shadow: 0 0 0 3.5px rgba(217, 31, 47, 0.12);
+    }
 
+    /* SYNC BADGE */
+    .sync-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: #f1ede6;
+      color: var(--tx-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.25s ease;
+    }
+    .sync-badge.syncing {
+      background: #fff4da;
+      color: #b46d00;
+    }
+    .sync-badge.ready {
+      background: var(--green-light);
+      color: var(--green-ok);
+      border: 1px solid rgba(10, 143, 99, 0.2);
+    }
+
+    /* WHATSAPP-STYLE GPS BUTTON */
     .btn-gps {
       width: 100%;
-      background: #fff7eb;
-      border: 2px dashed var(--gd);
-      color: #8f5300;
-      padding: 13px;
-      border-radius: 12px;
+      background: linear-gradient(180deg, #fffcf5 0%, #fff4dc 100%);
+      border: 2px dashed var(--gd-amber);
+      color: #8c5000;
+      padding: 14px 16px;
+      border-radius: 14px;
       font-weight: 800;
       font-size: 14px;
       cursor: pointer;
-      margin-top: 14px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(245, 163, 10, 0.15);
+    }
+    .btn-gps:hover {
+      background: #ffeed0;
+      transform: translateY(-1px);
+    }
+    .btn-gps:active {
+      transform: translateY(0);
+      background: #ffe6bd;
+    }
+    .btn-gps i {
+      font-size: 16px;
+      color: var(--rd-main);
+    }
+
+    /* GPS FEEDBACK BOX */
+    .gps-box {
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #fbf7ee;
+      font-size: 12px;
+      display: none;
+      animation: fadeIn 0.25s ease forwards;
+      border: 1px solid var(--border-line);
+    }
+    .gps-box.ok {
+      display: block;
+      border-left: 4.5px solid var(--green-ok);
+      background: var(--green-light);
+      color: #0d4b35;
+    }
+    .gps-box.err {
+      display: block;
+      border-left: 4.5px solid var(--rd-main);
+      background: #fdf0f0;
+      color: var(--rd-dark);
+    }
+
+    .coords-preview {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(10, 143, 99, 0.25);
+    }
+    .coords-digits {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .btn-map-test {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #ffffff;
+      color: #1e3a8a;
+      border: 1px solid #bfdbfe;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.15s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .btn-map-test:hover {
+      background: #eff6ff;
+      border-color: #3b82f6;
+    }
+
+    .live-link-info {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #065f46;
+      word-break: break-all;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(10, 143, 99, 0.15);
+    }
+
+    /* MANUAL URL ACCORDION */
+    .toggle-paste {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-    }
-    .gps-box {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      background: #f4efe0;
-      font-size: 12px;
-      display: none;
-    }
-    .gps-box.ok { display: block; border-left: 4px solid var(--gr); }
-    .gps-box.err { display: block; border-left: 4px solid var(--rd); background: #fde8e8; color: var(--rd); }
-
-    .toggle-paste {
-      display: block;
+      width: 100%;
       text-align: center;
-      margin-top: 10px;
-      color: var(--mu);
+      margin-top: 12px;
+      color: var(--tx-muted);
       font-size: 12px;
-      text-decoration: underline;
+      font-weight: 600;
       cursor: pointer;
       background: none;
       border: 0;
-      width: 100%;
-      padding: 4px 0;
+      padding: 6px 0;
+      transition: color 0.2s;
+    }
+    .toggle-paste:hover {
+      color: var(--rd-main);
     }
 
     .paste-container {
       display: none;
       margin-top: 8px;
-      padding: 10px;
+      padding: 12px;
       background: #faf6f0;
-      border: 1px dashed var(--ln);
-      border-radius: 10px;
+      border: 1.5px dashed var(--border-line);
+      border-radius: 12px;
+      animation: fadeIn 0.2s ease forwards;
     }
 
+    /* SUBMIT BUTTON */
     .btn-sub {
       width: 100%;
-      background: var(--rd);
+      background: linear-gradient(145deg, var(--rd-main), var(--rd-dark));
       border: 0;
-      color: #fff;
-      padding: 13px;
-      border-radius: 12px;
+      color: #ffffff;
+      padding: 14px;
+      border-radius: 14px;
       font-weight: 800;
       font-size: 15px;
+      letter-spacing: 0.2px;
       cursor: pointer;
       margin-top: 16px;
-      box-shadow: 0 4px 12px rgba(217,31,47,0.25);
+      box-shadow: 0 6px 16px rgba(217, 31, 47, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
     }
-    .btn-sub:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-sub:hover:not(:disabled) {
+      box-shadow: 0 8px 20px rgba(217, 31, 47, 0.36);
+      transform: translateY(-1px);
+    }
+    .btn-sub:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    .btn-sub:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+      background: #a3958e;
+    }
 
+    /* TOAST NOTIFICATION */
     .toast {
       position: fixed;
       left: 50%;
-      bottom: 20px;
-      transform: translateX(-50%);
-      background: #222;
-      color: #fff;
-      padding: 10px 18px;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(30px);
+      background: #181111;
+      color: #ffffff;
+      padding: 11px 18px;
       border-radius: 99px;
       font-size: 13px;
+      font-weight: 600;
       opacity: 0;
       pointer-events: none;
-      transition: 0.2s;
-      z-index: 99;
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+      max-width: 90vw;
+      text-align: center;
     }
-    .toast.on { opacity: 1; }
+    .toast.on {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.success { border-left: 4px solid var(--green-ok); }
+    .toast.info { border-left: 4px solid var(--gd-amber); }
+    .toast.error { border-left: 4px solid var(--rd-main); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
 
-  <div class="hd">
-    <div class="logo">SATMOLA<small>LOGISTICS</small></div>
-    <h1>Partner Geolocation Portal<small>Field Dispatch & Routing System</small></h1>
-  </div>
+  <!-- HEADER BRANDING -->
+  <header class="hd">
+    <div class="logo-badge">
+      SATMOLA
+      <small>LOGISTICS</small>
+    </div>
+    <div class="hd-text">
+      <h1>Partner Geolocation Portal</h1>
+      <small><i class="fa-solid fa-map-location-dot" style="color:var(--gd-amber)"></i> Field Dispatch & Routing System</small>
+    </div>
+  </header>
 
-  <div class="card">
-    <label>Sales Officer / Representative</label>
-    <select id="rep">
-      <option value="">-- Select Representative --</option>
-      <option value="SUMAN P.">SUMAN P.</option>
-      <option value="Amit Mishra">Amit Mishra</option>
-      <option value="RASHID">RASHID</option>
-      <option value="PUSHKAR S.">PUSHKAR S.</option>
-      <option value="TARUN KUMAR">TARUN KUMAR</option>
-      <option value="AMRENDRA KUMAR">AMRENDRA KUMAR</option>
-      <option value="Operations Desk">Operations Desk / Logistics Admin</option>
-    </select>
+  <!-- FORM CARD -->
+  <main class="card">
+    
+    <!-- 1. SALES EMPLOYEE -->
+    <div class="form-group">
+      <label for="rep">Sales Employee</label>
+      <select id="rep">
+        <option value="">-- Select Sales Employee --</option>
+        <option value="SUMAN P.">SUMAN P.</option>
+        <option value="Amit Mishra">Amit Mishra</option>
+        <option value="RASHID">RASHID</option>
+        <option value="PUSHKAR S.">PUSHKAR S.</option>
+        <option value="TARUN KUMAR">TARUN KUMAR</option>
+        <option value="AMRENDRA KUMAR">AMRENDRA KUMAR</option>
+        <option value="Operations Desk">Operations Desk / Logistics Admin</option>
+      </select>
+    </div>
 
-    <label>Business Partner (BP) Name</label>
-    <input type="text" id="bpName" placeholder="e.g. A D TRADERS, CHANDNI CHOWK" required>
+    <!-- 2. BP NAME (AUTO-SUGGEST + FREE TYPE) -->
+    <div class="form-group">
+      <div class="label-row">
+        <label for="bpName">Business Partner (BP) Name</label>
+        <span class="sync-badge syncing" id="syncStatus">
+          <i class="fa-solid fa-arrows-rotate fa-spin"></i> Syncing BPs...
+        </span>
+      </div>
+      <input 
+        list="bpListOptions" 
+        type="text" 
+        id="bpName" 
+        placeholder="Type to search or enter new BP..." 
+        required 
+        autocomplete="off"
+        oninput="handleBpNameInput(this.value)"
+      >
+      <datalist id="bpListOptions"></datalist>
+      <div id="matchNotice" style="display:none; font-size:11px; margin-top:4px; font-weight:600;"></div>
+    </div>
 
-    <label>Billing Block / Area / City</label>
-    <input type="text" id="city" placeholder="e.g. Chandni Chowk, Central Delhi" required>
+    <!-- 3. CITY NAME / AREA -->
+    <div class="form-group">
+      <label for="city">City Name / Area</label>
+      <input type="text" id="city" placeholder="e.g. Chandni Chowk, Central Delhi" required>
+    </div>
 
-    <label>Contact Number (Optional)</label>
-    <input type="tel" id="mobile" placeholder="e.g. +91 9899XXXXXX">
+    <!-- 4. MOBILE NUMBER (OPTIONAL) -->
+    <div class="form-group">
+      <label for="mobile">Mobile Number (Optional)</label>
+      <input type="tel" id="mobile" placeholder="e.g. +91 98991 XXXXX">
+    </div>
 
-    <!-- Primary Action: 1-Click Satellite GPS -->
+    <!-- 5. 1-CLICK WHATSAPP-STYLE LIVE GPS CAPTURE -->
     <button type="button" class="btn-gps" id="btnGps">
-      📍 Acquire Store GPS Coordinates
+      <i class="fa-solid fa-location-crosshairs"></i> Acquire Store GPS Coordinates
     </button>
     <div class="gps-box" id="gpsBox"></div>
 
-    <!-- Secondary Action: Professional Manual URL Option -->
+    <!-- 6. ACCORDION: MANUAL URL / COORDS FALLBACK -->
     <button type="button" class="toggle-paste" id="togglePaste">
-      + Enter Google Maps URL / Coordinates manually
+      <i class="fa-solid fa-plus" id="toggleIcon"></i> Enter Google Maps URL / Coordinates manually
     </button>
 
     <div class="paste-container" id="pasteSec">
-      <label style="margin-top:0;">Maps Location Link or Lat,Lng</label>
-      <input type="text" id="waInput" placeholder="Paste link (maps.app.goo.gl) or coordinates (e.g. 28.6506, 77.2303)">
+      <label style="margin-top:0;" for="waInput">Google Maps URL or Lat, Lng</label>
+      <input 
+        type="text" 
+        id="waInput" 
+        placeholder="Paste link (maps.app.goo.gl) or coordinates (e.g. 28.6506, 77.2303)"
+      >
       <div class="gps-box" id="pasteBox"></div>
     </div>
 
-    <!-- Clean Submit Button -->
+    <!-- SUBMIT RECORD -->
     <button type="button" class="btn-sub" id="btnSub" disabled>
-      Submit Location
+      <i class="fa-solid fa-paper-plane"></i> Submit Location
     </button>
-  </div>
 
+  </main>
+
+  <!-- TOAST FEEDBACK -->
   <div class="toast" id="toast"></div>
 
   <script>
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZX032zbv9PpgHzqRxtC2slN3bPrPOcypFxOVrsCkdq3F5_AAzZgXAUveQHIwHtzQ1gA/exec";
+    // GOOGLE APPS SCRIPT WEB APP ENDPOINT
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZX032zbv9PpgHzqRxtC2slN3bPrPOcypFxOVrsCkdq3F5_AAzZgXAUveQHIwHtzQ1gA/exec";
 
-    var curLoc = null;
-    var $ = function(id) { return document.getElementById(id); };
+    // APPLICATION STATE
+    let curLoc = null;
+    let cachedBpList = [];
 
-    function toast(msg) {
-      var t = $("toast");
-      t.textContent = msg;
-      t.className = "toast on";
-      setTimeout(function() { t.className = "toast"; }, 2400);
+    const $ = id => document.getElementById(id);
+
+    // TOAST NOTIFIER
+    let toastTimer = null;
+    function showToast(msg, type = "info") {
+      const t = $("toast");
+      t.className = `toast on ${type}`;
+      let icon = "fa-circle-info";
+      if (type === "success") icon = "fa-circle-check";
+      if (type === "error") icon = "fa-circle-exclamation";
+      
+      t.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+      
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        t.className = "toast";
+      }, 3200);
     }
 
     function checkReady() {
-      $("btnSub").disabled = (curLoc == null);
+      $("btnSub").disabled = (curLoc === null);
     }
 
-    // Toggle Manual Input Section
-    $("togglePaste").onclick = function() {
-      var s = $("pasteSec");
-      var isHidden = (s.style.display === "none" || !s.style.display);
-      s.style.display = isHidden ? "block" : "none";
-      this.textContent = isHidden ? "− Hide manual coordinates input" : "+ Enter Google Maps URL / Coordinates manually";
-    };
+    // AUTOMATIC LIVE GOOGLE MAPS HYPERLINK GENERATOR
+    function generateMapsUrl(lat, lng) {
+      if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+        return `https://www.google.com/maps?q=${parseFloat(lat).toFixed(6)},${parseFloat(lng).toFixed(6)}`;
+      }
+      return null;
+    }
 
-    // Live Satellite GPS Capture
+    // 1. AUTO-SYNC BP NAMES FROM GOOGLE SHEET (COLUMN A)
+    function loadExistingBPs() {
+      const badge = $("syncStatus");
+      badge.className = "sync-badge syncing";
+      badge.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Syncing BPs...`;
+
+      fetch(SCRIPT_URL)
+        .then(res => res.json())
+        .then(data => {
+          if (data && Array.isArray(data.bpList)) {
+            cachedBpList = Array.from(new Set(data.bpList.filter(n => typeof n === 'string' && n.trim() !== "")));
+            const datalist = $("bpListOptions");
+            datalist.innerHTML = "";
+            
+            cachedBpList.forEach(bp => {
+              const opt = document.createElement("option");
+              opt.value = bp;
+              datalist.appendChild(opt);
+            });
+
+            badge.className = "sync-badge ready";
+            badge.innerHTML = `<i class="fa-solid fa-check"></i> ${cachedBpList.length} BPs Synced`;
+          } else {
+            badge.className = "sync-badge ready";
+            badge.innerHTML = `✓ Ready`;
+          }
+        })
+        .catch(err => {
+          console.warn("Sync error:", err);
+          badge.className = "sync-badge";
+          badge.innerHTML = `• Standby Mode`;
+        });
+    }
+
+    // MATCH DETECTOR WHILE TYPING BP NAME
+    function handleBpNameInput(val) {
+      const trimmed = (val || "").trim().toLowerCase();
+      const notice = $("matchNotice");
+      if (!trimmed) {
+        notice.style.display = "none";
+        return;
+      }
+
+      const matchFound = cachedBpList.some(item => item.toLowerCase() === trimmed);
+      if (matchFound) {
+        notice.style.display = "block";
+        notice.style.color = "var(--green-ok)";
+        notice.innerHTML = `<i class="fa-solid fa-arrow-rotate-right"></i> Existing BP: Coordinates will update existing sheet row.`;
+      } else {
+        notice.style.display = "block";
+        notice.style.color = "var(--tx-muted)";
+        notice.innerHTML = `<i class="fa-solid fa-plus"></i> New BP: Will append to last row of Google Sheet.`;
+      }
+    }
+
+    // 2. LIVE HIGH-ACCURACY GPS CAPTURE WITH AUTO LIVE GOOGLE MAPS HYPERLINK
     $("btnGps").onclick = function() {
       if (!navigator.geolocation) {
-        return alert("Geolocation services are not supported by this browser. Please use Chrome or Safari.");
+        return alert("Geolocation is not supported by your mobile browser. Please open in Chrome or Safari.");
       }
-      $("gpsBox").className = "gps-box ok";
-      $("gpsBox").innerHTML = "⏳ Establishing satellite link... Please hold.";
+
+      const box = $("gpsBox");
+      box.className = "gps-box ok";
+      box.style.display = "block";
+      box.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-spinner fa-spin"></i> 
+          <span>Acquiring live satellite coordinates... Please wait.</span>
+        </div>
+      `;
 
       navigator.geolocation.getCurrentPosition(
         function(pos) {
+          const lat = pos.coords.latitude.toFixed(6);
+          const lng = pos.coords.longitude.toFixed(6);
+          const acc = Math.round(pos.coords.accuracy);
+          const liveMapHyperlink = generateMapsUrl(lat, lng);
+
           curLoc = {
-            lat: pos.coords.latitude.toFixed(6),
-            lng: pos.coords.longitude.toFixed(6),
-            accuracy: Math.round(pos.coords.accuracy)
+            lat: lat,
+            lng: lng,
+            accuracy: acc,
+            mapUrl: liveMapHyperlink
           };
-          $("gpsBox").className = "gps-box ok";
-          $("gpsBox").innerHTML = "<b>🟢 Coordinates Verified</b> (Accuracy: ±" + curLoc.accuracy + "m)<br>Lat: " + curLoc.lat + ", Lng: " + curLoc.lng;
+
+          box.className = "gps-box ok";
+          box.innerHTML = `
+            <div>
+              <b style="color:var(--green-ok);"><i class="fa-solid fa-circle-check"></i> Live GPS Captured</b> 
+              <span style="font-size:11px; margin-left:4px;">(Accuracy: ±${acc}m)</span>
+            </div>
+            <div class="coords-preview">
+              <span class="coords-digits">${lat}, ${lng}</span>
+              <a href="${liveMapHyperlink}" target="_blank" rel="noopener noreferrer" class="btn-map-test">
+                <i class="fa-solid fa-location-arrow"></i> Test Map Pin
+              </a>
+            </div>
+            <div class="live-link-info">
+              <i class="fa-solid fa-link"></i> <b>Sheet Hyperlink:</b> ${liveMapHyperlink}
+            </div>
+          `;
           checkReady();
         },
         function(err) {
           curLoc = null;
           checkReady();
-          $("gpsBox").className = "gps-box err";
-          $("gpsBox").innerHTML = "❌ Position Error: " + err.message + ". Please verify device Location/GPS is active and browser permissions are granted.";
+          box.className = "gps-box err";
+          box.innerHTML = `
+            <i class="fa-solid fa-triangle-exclamation"></i> 
+            <b>GPS Error:</b> ${err.message}. Phone ka Location/GPS ON karein aur browser permissions allow karein.
+          `;
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
       );
     };
 
-    // Paste Input Parser
+    // 3. TOGGLE MANUAL LINK ENTRY
+    $("togglePaste").onclick = function() {
+      const s = $("pasteSec");
+      const icon = $("toggleIcon");
+      const isHidden = (s.style.display === "none" || !s.style.display);
+      s.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        this.innerHTML = `<i class="fa-solid fa-minus" id="toggleIcon"></i> Hide manual URL / Coordinates input`;
+      } else {
+        this.innerHTML = `<i class="fa-solid fa-plus" id="toggleIcon"></i> Enter Google Maps URL / Coordinates manually`;
+      }
+    };
+
+    // 4. MANUAL URL & RAW COORDINATES PARSER WITH AUTO LIVE HYPERLINK
     $("waInput").oninput = function() {
-      var v = this.value.trim();
-      var box = $("pasteBox");
+      const v = this.value.trim();
+      const box = $("pasteBox");
+      box.style.display = "block";
 
-      var m = v.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || 
-              v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
-              v.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
-              v.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+      if (!v) {
+        box.style.display = "none";
+        curLoc = null;
+        checkReady();
+        return;
+      }
 
+      const atRegex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+      const qRegex = /[?&](?:q|query|destination)=(-?\d+\.\d+)(?:,|%2C|\+|\s)(-?\d+\.\d+)/i;
+      const embedRegex = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/;
+      const pairRegex = /(-?\d{1,2}(?:\.\d+)?)[,\s\t/]+(-?\d{1,3}(?:\.\d+)?)/;
+
+      let lat = null, lng = null;
+
+      let m = v.match(atRegex) || v.match(qRegex) || v.match(embedRegex);
       if (m) {
+        lat = parseFloat(m[1]).toFixed(6);
+        lng = parseFloat(m[2]).toFixed(6);
+      } else {
+        const pair = v.match(pairRegex);
+        if (pair) {
+          let p1 = parseFloat(pair[1]);
+          let p2 = parseFloat(pair[2]);
+          if (Math.abs(p1) > 50 && Math.abs(p2) < 40) {
+            lat = p2.toFixed(6);
+            lng = p1.toFixed(6);
+          } else {
+            lat = p1.toFixed(6);
+            lng = p2.toFixed(6);
+          }
+        }
+      }
+
+      if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+        const liveMapHyperlink = generateMapsUrl(lat, lng);
         curLoc = {
-          lat: parseFloat(m[1]).toFixed(6),
-          lng: parseFloat(m[2]).toFixed(6),
-          accuracy: 10
+          lat: lat,
+          lng: lng,
+          accuracy: 10,
+          mapUrl: liveMapHyperlink
         };
         box.className = "gps-box ok";
-        box.innerHTML = "<b>✓ Geographic Coordinates Parsed</b><br>Lat: " + curLoc.lat + ", Lng: " + curLoc.lng;
+        box.innerHTML = `
+          <div><b style="color:var(--green-ok);">✓ Coordinates Verified</b></div>
+          <div class="coords-preview">
+            <span class="coords-digits">${lat}, ${lng}</span>
+            <a href="${liveMapHyperlink}" target="_blank" rel="noopener noreferrer" class="btn-map-test">
+              <i class="fa-solid fa-location-arrow"></i> Test Map Pin
+            </a>
+          </div>
+          <div class="live-link-info">
+            <i class="fa-solid fa-link"></i> <b>Sheet Hyperlink:</b> ${liveMapHyperlink}
+          </div>
+        `;
         checkReady();
-      } else if (v.indexOf("http") === 0) {
+      } else if (v.startsWith("http://") || v.startsWith("https://")) {
         curLoc = {
           lat: "",
           lng: "",
-          link: v,
-          accuracy: 0
+          accuracy: 0,
+          mapUrl: v
         };
         box.className = "gps-box ok";
-        box.innerHTML = "<b>✓ Location URL Stored</b>";
+        box.innerHTML = `
+          <div><b>✓ Google Maps URL Recognized</b></div>
+          <div class="coords-preview">
+            <span style="font-size:11px; color:#555; overflow:hidden; text-overflow:ellipsis; max-width:200px;">${v}</span>
+            <a href="${v}" target="_blank" rel="noopener noreferrer" class="btn-map-test">
+              <i class="fa-solid fa-location-arrow"></i> Open Link
+            </a>
+          </div>
+        `;
         checkReady();
       } else {
         curLoc = null;
         box.className = "gps-box err";
-        box.innerHTML = "⚠️ Please enter a valid URL or geographic decimal coordinates.";
+        box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Sahi coordinates (e.g. 28.6506, 77.2303) ya Google Maps URL dalein.`;
         checkReady();
       }
     };
 
-    // Form Submission
+    // 5. FORM SUBMISSION (TRANSMITS DATA + HYPERLINK TO GOOGLE APPS SCRIPT)
     $("btnSub").onclick = function() {
-      var rep = $("rep").value;
-      var bpName = $("bpName").value.trim();
-      var city = $("city").value.trim();
-      var mobile = $("mobile").value.trim();
+      const rep = $("rep").value;
+      const bpName = $("bpName").value.trim();
+      const city = $("city").value.trim();
+      const mobile = $("mobile").value.trim();
 
-      if (!rep) return toast("Select Sales Officer");
-      if (!bpName) return toast("Enter BP / Partner Name");
-      if (!city) return toast("Enter Location / Area");
-      if (!curLoc) return toast("Location coordinates required");
+      if (!rep) return showToast("Sales Employee select karein", "error");
+      if (!bpName) return showToast("BP Name likhein ya select karein", "error");
+      if (!city) return showToast("City / Area fill karein", "error");
+      if (!curLoc) return showToast("Store GPS acquire karein", "error");
 
-      $("btnSub").disabled = true;
-      $("btnSub").textContent = "Transmitting record...";
+      const btn = $("btnSub");
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Saving to Google Sheet...`;
 
-      var payload = {
+      // Live Google Maps link is guaranteed to be created and sent
+      const finalMapUrl = curLoc.mapUrl || generateMapsUrl(curLoc.lat, curLoc.lng) || "";
+
+      const payload = {
         rep: rep,
         bpName: bpName,
         city: city,
@@ -329,7 +753,7 @@
         lat: curLoc.lat || "",
         lng: curLoc.lng || "",
         accuracy: curLoc.accuracy || 0,
-        mapsUrl: curLoc.link || ""
+        mapsUrl: finalMapUrl
       };
 
       fetch(SCRIPT_URL, {
@@ -338,29 +762,43 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       })
-      .then(function() {
-        toast("✓ Location successfully updated in Master!");
-        $("btnSub").textContent = "Record Saved";
-        setTimeout(function() {
+      .then(() => {
+        const wasExisting = cachedBpList.some(item => item.toLowerCase() === bpName.toLowerCase());
+        if (wasExisting) {
+          showToast(`✓ Updated coordinates & hyperlink in existing BP row!`, "success");
+        } else {
+          showToast(`✓ New BP & live hyperlink added to Sheet!`, "success");
+        }
+
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> Saved Successfully`;
+
+        setTimeout(() => {
           $("bpName").value = "";
           $("city").value = "";
           $("mobile").value = "";
           $("waInput").value = "";
-          $("gpsBox").className = "gps-box";
+          $("matchNotice").style.display = "none";
+          $("gpsBox").style.display = "none";
           $("gpsBox").innerHTML = "";
-          $("pasteBox").className = "gps-box";
+          $("pasteBox").style.display = "none";
           $("pasteBox").innerHTML = "";
-          $("btnSub").textContent = "Submit Location";
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Submit Location`;
           curLoc = null;
           checkReady();
-        }, 1800);
+          loadExistingBPs(); // Re-sync cached BP catalog
+        }, 1600);
       })
-      .catch(function(err) {
-        alert("Transmission Error: " + err);
-        $("btnSub").disabled = false;
-        $("btnSub").textContent = "Submit Location";
+      .catch(err => {
+        showToast("Network Error: " + err.message, "error");
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Submit Location`;
       });
     };
+
+    // INITIAL LOAD
+    window.addEventListener("DOMContentLoaded", () => {
+      loadExistingBPs();
+    });
   </script>
 </body>
 </html>
