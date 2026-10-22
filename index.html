@@ -656,7 +656,7 @@ $("shPdf").onclick=function(){if(!stops.length)return toast("Add stops first");t
 $("shPr").onclick=function(){if(!stops.length)return toast("Add stops first");setPage();if(SBX){toast("Print is blocked inside Claude, so the PDF is being saved. Open it and print.");$("shPdf").onclick();return}try{window.print()}catch(e){$("shPdf").onclick()}};
 loadSaved();stops=[];dir();all();
 
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZX032zbv9PpgHzqRxtC2slN3bPrPOcypFxOVrsCkdq3F5_AAzZgXAUveQHIwHtzQ1gA/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyakTMK67GeFaS8m6NaPHSCLmdMUtqwOlVS2WyA7ZbShi5M7Naa4bv_iirrZJTEzgurvA/exec";
 
 function parseCoordsFromUrl(url) {
   if (!url) return null;
