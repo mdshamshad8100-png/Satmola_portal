@@ -391,22 +391,37 @@
   <!-- Submission Form -->
   <main class="card">
     
-    <!-- 1. Sales Employee -->
+    <!-- 1. Sales Employee (Updated 10 Employees from BP Master) -->
     <div class="form-group">
       <label for="rep">Sales Employee</label>
       <select id="rep">
         <option value="">-- Select Sales Employee --</option>
-        <option value="SUMAN P.">SUMAN P.</option>
         <option value="Amit Mishra">Amit Mishra</option>
-        <option value="RASHID">RASHID</option>
-        <option value="PUSHKAR S.">PUSHKAR S.</option>
-        <option value="TARUN KUMAR">TARUN KUMAR</option>
-        <option value="AMRENDRA KUMAR">AMRENDRA KUMAR</option>
+        <option value="Amrendra Kumar">Amrendra Kumar</option>
+        <option value="Dileep Nigam">Dileep Nigam</option>
+        <option value="Kundan">Kundan</option>
+        <option value="Pushkar S.">Pushkar S.</option>
+        <option value="Rashid">Rashid</option>
+        <option value="Shamim">Shamim</option>
+        <option value="Suman P.">Suman P.</option>
+        <option value="Tarun Kumar">Tarun Kumar</option>
+        <option value="Vivek Mittal">Vivek Mittal</option>
         <option value="Operations Desk">Operations Desk / Logistics Admin</option>
       </select>
     </div>
 
-    <!-- 2. Business Partner Name (Auto-Suggest & Free Type) -->
+    <!-- 2. Group (Added from BP Master) -->
+    <div class="form-group">
+      <label for="bpGroup">Group</label>
+      <select id="bpGroup">
+        <option value="">-- Select Group --</option>
+        <option value="Modern Trade">Modern Trade</option>
+        <option value="Namkeen Divison">Namkeen Divison</option>
+        <option value="Others Customer">Others Customer</option>
+      </select>
+    </div>
+
+    <!-- 3. Business Partner Name (Auto-Suggest & Free Type) -->
     <div class="form-group">
       <div class="label-row">
         <label for="bpName">Business Partner (BP) Name</label>
@@ -427,25 +442,25 @@
       <div id="matchNotice" style="display:none; font-size:11px; margin-top:4px; font-weight:600;"></div>
     </div>
 
-    <!-- 3. City Name / Area -->
+    <!-- 4. City Name / Area -->
     <div class="form-group">
       <label for="city">City Name / Area</label>
       <input type="text" id="city" placeholder="e.g. Chandni Chowk, Central Delhi" required>
     </div>
 
-    <!-- 4. Mobile Number (Optional) -->
+    <!-- 5. Mobile Number (Optional) -->
     <div class="form-group">
       <label for="mobile">Mobile Number (Optional)</label>
       <input type="tel" id="mobile" placeholder="e.g. +91 98991 XXXXX">
     </div>
 
-    <!-- 5. 1-Click Satellite GPS Location Capture -->
+    <!-- 6. 1-Click Satellite GPS Location Capture -->
     <button type="button" class="btn-gps" id="btnGps">
       <i class="fa-solid fa-location-crosshairs"></i> Acquire Store GPS Coordinates
     </button>
     <div class="gps-box" id="gpsBox"></div>
 
-    <!-- 6. Manual Coordinates / Google Maps Link Entry -->
+    <!-- 7. Manual Coordinates / Google Maps Link Entry -->
     <button type="button" class="toggle-paste" id="togglePaste">
       <i class="fa-solid fa-plus" id="toggleIcon"></i> Enter Google Maps URL / Coordinates manually
     </button>
@@ -739,11 +754,13 @@
     // 5. Submit Form to Google Apps Script
     $("btnSub").onclick = function() {
       const rep = $("rep").value;
+      const bpGroup = $("bpGroup").value;
       const bpName = $("bpName").value.trim();
       const city = $("city").value.trim();
       const mobile = $("mobile").value.trim();
 
       if (!rep) return showToast("Please select Sales Employee", "error");
+      if (!bpGroup) return showToast("Please select Group", "error");
       if (!bpName) return showToast("Please enter or select BP Name", "error");
       if (!city) return showToast("Please specify City / Area", "error");
       if (!curLoc) return showToast("Please acquire store GPS coordinates", "error");
@@ -756,6 +773,7 @@
 
       const payload = {
         rep: rep,
+        group: bpGroup,
         bpName: bpName,
         city: city,
         mobile: mobile,
@@ -783,6 +801,7 @@
 
         setTimeout(() => {
           $("bpName").value = "";
+          $("bpGroup").value = "";
           $("city").value = "";
           $("mobile").value = "";
           $("waInput").value = "";

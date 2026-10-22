@@ -149,7 +149,7 @@
 
     .actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 9px;
       margin-top: 16px;
     }
@@ -169,23 +169,19 @@
       transition: all 0.2s;
     }
     .btn-wa {
-      grid-column: span 2;
       background: #25d366;
       color: #fff;
       font-size: 14.5px;
       box-shadow: 0 4px 12px rgba(37,211,102,0.3);
     }
     .btn-porter {
-      grid-column: span 2;
       background: linear-gradient(135deg, #1062eb, #094bb9);
       color: #fff;
       font-size: 14.5px;
       box-shadow: 0 4px 12px rgba(16, 98, 235, 0.35);
     }
     .btn-map { background: var(--bl); color: #fff; }
-    .btn-call-party { background: #f0f3f6; color: var(--tx); border: 1px solid #ccd; }
     .btn-call-rep {
-      grid-column: span 2;
       background: #fff8eb;
       color: #b45309;
       border: 1.5px solid #f6dd8f;
@@ -236,10 +232,10 @@
 
     <div class="details-card" id="detCard">
       <div class="party-title" id="dName"></div>
+      <div class="info-row"><span class="info-lbl">Group:</span><span class="info-val" id="dGroup"></span></div>
       <div class="info-row"><span class="info-lbl">Sales Rep:</span><span class="info-val" id="dRep"></span></div>
       <div class="info-row"><span class="info-lbl">Area / City:</span><span class="info-val" id="dCity"></span></div>
       <div class="info-row"><span class="info-lbl">Bill-to Block:</span><span class="info-val" id="dBlock"></span></div>
-      <div class="info-row"><span class="info-lbl">Party Mobile:</span><span class="info-val" id="dMob"></span></div>
       <div class="info-row"><span class="info-lbl">Location Status:</span><span class="info-val" id="dLocTag"></span></div>
 
       <div class="actions">
@@ -256,9 +252,6 @@
         <button class="btn-map" id="btnMap">
           <i class="fa-solid fa-map-location-dot"></i> Open Google Map
         </button>
-        <button class="btn-call-party" id="btnCallParty">
-          <i class="fa-solid fa-phone-volume"></i> Call Party
-        </button>
       </div>
     </div>
   </main>
@@ -266,18 +259,18 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Sales Executive Contact Directory
+    // Sales Executive Contact Directory (Sheet ke 6 numbers, baaki blank)
     var REP_PHONES = {
-      "SUMAN P.":       "9899996180",
-      "Amit Mishra":    "9310775300",
-      "PUSHKAR S.":     "8475058000",
-      "TARUN KUMAR":    "9971719926",
-      "AMRENDRA KUMAR": "9717444940",
-      "RASHID":         "",
-      "KUNDAN":         "",
-      "Dileep Nigam":   "8010969742",
-      "SHAMIM":         "",
-      "VIVEK MITTAL":   ""
+      "Amrendra Kumar": "9971719926",
+      "Rashid":         "8010157985",
+      "Kundan":         "9717530365",
+      "Tarun Kumar":    "9560522617",
+      "Shamim":         "9971525162",
+      "Vivek Mittal":   "9818211715",
+      "Amit Mishra":    "",
+      "Pushkar S.":     "",
+      "Suman P.":       "",
+      "Dileep Nigam":   ""
     };
 
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyakTMK67GeFaS8m6NaPHSCLmdMUtqwOlVS2WyA7ZbShi5M7Naa4bv_iirrZJTEzgurvA/exec";
@@ -330,7 +323,6 @@
               r["Sales Employee"] || "",
               r["GRoup"] || "",
               r["State"] || "",
-              r["Mobile"] || "",
               lat,
               lng,
               link
@@ -365,7 +357,7 @@
       var matches = [];
       for (var i = 0; i < BPS.length; i++) {
         var b = BPS[i];
-        var text = (b[0] + " " + b[1] + " " + b[2] + " " + b[3]).toLowerCase();
+        var text = (b[0] + " " + b[1] + " " + b[2] + " " + b[3] + " " + b[4]).toLowerCase();
         if (text.indexOf(q) > -1) matches.push({ idx: i, data: b });
         if (matches.length >= 8) break;
       }
@@ -385,18 +377,18 @@
       var b = BPS[+item.dataset.idx];
       var rep = b[3] || "N/A";
       var repPhone = REP_PHONES[rep] || "";
-      var hasGps = !!(b[7] && b[8]);
+      var hasGps = !!(b[6] && b[7]);
 
       curBp = {
         name: b[0],
         city: b[1],
         block: b[2],
         rep: rep,
+        group: b[4] || "N/A",
         repPhone: repPhone,
-        mob: b[6] || "",
-        lat: b[7],
-        lng: b[8],
-        mapLink: b[9] || "",
+        lat: b[6],
+        lng: b[7],
+        mapLink: b[8] || "",
         hasGps: hasGps
       };
 
@@ -404,10 +396,10 @@
       $("res").innerHTML = "";
 
       $("dName").textContent = curBp.name;
-      $("dRep").textContent = curBp.rep + (curBp.repPhone ? " (📞 " + curBp.repPhone + ")" : "");
+      $("dGroup").textContent = curBp.group;
+      $("dRep").textContent = curBp.rep; // Screen par sirf naam dikhega, number hide rahega
       $("dCity").textContent = curBp.city;
       $("dBlock").textContent = curBp.block;
-      $("dMob").textContent = curBp.mob ? curBp.mob : "Not Available";
       $("repNameShort").textContent = curBp.rep;
       
       if (curBp.hasGps) {
@@ -446,23 +438,25 @@
       }
     };
 
-    // Share Details on WhatsApp
+    // Share Details on WhatsApp (Send karne par number aayega)
     $("btnWa").onclick = function() {
       if (!curBp) return;
       var mapLink = getMapUrl(curBp);
 
-      var text = "🚚 *SATMOLA PARTY DETAILS*\n" +
+      var repDetails = curBp.rep + (curBp.repPhone ? " (" + curBp.repPhone + ")" : "");
+
+      var text = "👨‍💻 *SATMOLA PARTY DETAILS*\n" +
                  "━━━━━━━━━━━━━━━━━━\n" +
                  "🏬 *Party:* " + curBp.name + "\n" +
-                 "👤 *Rep:* " + curBp.rep + (curBp.repPhone ? " (" + curBp.repPhone + ")" : "") + "\n" +
+                 "🏷️ *Group:* " + curBp.group + "\n" +
+                 "👤 *Rep:* " + repDetails + "\n" +
                  "📍 *Address:* " + curBp.block + ", " + curBp.city + "\n" +
-                 (curBp.mob ? "📞 *Party Mobile:* " + curBp.mob + "\n" : "") +
                  "🗺️ *Location:* " + mapLink;
 
       window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
     };
 
-    // Call Sales Representative
+    // Call Sales Representative (Call karne par number dial hoga)
     $("btnCallRep").onclick = function() {
       if (!curBp) return;
       if (!curBp.repPhone) {
@@ -476,12 +470,6 @@
       if (!curBp) return;
       var mapLink = getMapUrl(curBp);
       window.open(mapLink, "_blank");
-    };
-
-    // Call Party Mobile
-    $("btnCallParty").onclick = function() {
-      if (!curBp || !curBp.mob) return toast("Party mobile number not available");
-      window.location.href = "tel:" + curBp.mob.split(",")[0].trim();
     };
   </script>
 </body>
