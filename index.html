@@ -361,7 +361,7 @@ function openPorter(p){$("porP").value=HUBS[hubK].a;$("porD").value=p.addr;$("po
 $("porCp").onclick=function(){copy($("porP").value)};$("porCd").onclick=function(){copy($("porD").value)};
 $("porGo").onclick=function(){copy("Pickup: "+$("porP").value+NL+"Drop: "+$("porD").value);go("https://porter.in/","porter")};
 $("addBp").onclick=function(){$("addM").classList.add("on");$("aN").focus()};
-$("aGo").onclick=function(){var n=$("aN").value.trim();if(!n)return toast("Enter a name");rows.push({name:n,city:$("aC").value,block:$("aB").value,zone:"",emp:"",group:"",state:"",mobile:$("aM").value,owner:"",lat:"",lng:""});["aN","aB","aC","aM"].forEach(function(i){$(i).value=""});$("addM").classList.remove("on");dir();add(rows.length-1)};
+$("aGo").onclick=function(){var n=$("aN").value.trim();if(!n)return toast("Enter a name");if(!$("aC").value.trim())return toast("Enter city / area");try{fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({bpName:n,block:$("aB").value,city:$("aC").value,mobile:$("aM").value})});toast("Saving new BP to Google Sheet...")}catch(e){}rows.push({name:n,city:$("aC").value,block:$("aB").value,zone:"",emp:"",group:"",state:"",mobile:$("aM").value,owner:"",lat:"",lng:""});["aN","aB","aC","aM"].forEach(function(i){$(i).value=""});$("addM").classList.remove("on");dir();add(rows.length-1)};
 var llRi=-1;
 $("llGo").onclick=function(){var a=$("llI").value.split(",").map(function(x){return parseFloat(x)});if(a.length<2||isNaN(a[0])||isNaN(a[1]))return toast("Invalid format");rows[llRi].lat=a[0];rows[llRi].lng=a[1];$("llM").classList.remove("on");all()};
 var viewReal=true,_dm=drawMap,_rmSrc="";
@@ -657,49 +657,6 @@ $("shPr").onclick=function(){if(!stops.length)return toast("Add stops first");se
 loadSaved();stops=[];dir();all();
 
 var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZX032zbv9PpgHzqRxtC2slN3bPrPOcypFxOVrsCkdq3F5_AAzZgXAUveQHIwHtzQ1gA/exec";
-function fetchLiveMaster() {
-  toast("Syncing live BP Master sheet...");
-  fetch(SCRIPT_URL)
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (!Array.isArray(data) || data.length === 0) return;
-      rows = data.map(function(r) {
-        var name = (r["BP Name"] || "").trim();
-        var city = (r["City Name"] || r["Ship-to City"] || "").trim();
-        var block = (r["Bill-to Block"] || "").trim();
-        var zone = (r["Zone Name"] || "").trim();
-        var emp = (r["Sales Employee"] || "").trim();
-        var group = (r["GRoup"] || "").trim();
-        var state = (r["State"] || "").trim();
-        var mobile = (r["Mobile"] || "").trim();
-        var owner = (r["Owner"] || "").trim();
-        var lat = parseFloat(r["Lat"]);
-        var lng = parseFloat(r["Lng"]);
-        return {
-          name: name,
-          city: city,
-          block: block,
-          zone: zone,
-          emp: emp,
-          group: group,
-          state: state,
-          mobile: mobile,
-          owner: owner,
-          lat: isFinite(lat) ? lat : "",
-          lng: isFinite(lng) ? lng : "",
-          all: (name + " " + city + " " + block + " " + zone + " " + emp + " " + mobile).toLowerCase()
-        };
-      }).filter(function(r) { return r.name; });
-      saveRows();
-      dir();
-      all();
-      toast("● " + rows.length + " BPs Loaded Live from Sheet!");
-    })
-    .catch(function(err) {
-      console.error("Live fetch error:", err);
-    });
-}
-window.addEventListener("DOMContentLoaded", fetchLiveMaster);
 
 function parseCoordsFromUrl(url) {
   if (!url) return null;
@@ -709,32 +666,35 @@ function parseCoordsFromUrl(url) {
   return m ? [parseFloat(m[1]), parseFloat(m[2])] : null;
 }
 
+function S(v){return String(v==null?"":v).trim()}
 function fetchLiveMaster() {
-  toast("Syncing live BP Master sheet...");
+  toast("Syncing live BP Master from Google Sheet...");
   fetch(SCRIPT_URL)
     .then(function(res) { return res.json(); })
     .then(function(data) {
-      var arr = Array.isArray(data) ? data : (data.bpList ? [] : []);
-      if (!arr.length) return;
-      rows = arr.map(function(r) {
-        var name = (r["BP Name"] || "").trim();
-        var city = (r["City Name"] || r["Ship-to City"] || "").trim();
-        var block = (r["Bill-to Block"] || "").trim();
-        var zone = (r["Zone Name"] || "").trim();
-        var emp = (r["Sales Employee"] || "").trim();
-        var group = (r["GRoup"] || "").trim();
-        var state = (r["State"] || "").trim();
-        var mobile = (r["Mobile"] || "").trim();
-        var owner = (r["Owner"] || "").trim();
-        var mapLink = (r["Map Hyperlink"] || "").trim();
+      if (!Array.isArray(data) || data.length === 0) { toast("Sheet sync failed: " + (data && data.error ? data.error : "no data")); return; }
+      rows = data.map(function(r) {
+        var name = S(r["BP Name"]);
+        var city = S(r["City Name"] || r["Ship-to City"]);
+        var block = S(r["Bill-to Block"]);
+        var zone = S(r["Zone Name"]);
+        var emp = S(r["Sales Employee"]);
+        var group = S(r["GRoup"]);
+        var state = S(r["State"]);
+        var mobile = S(r["Mobile"]);
+        var owner = S(r["Owner"]);
+        var mapLink = S(r["Map Hyperlink"]);
         
         var lat = parseFloat(r["Latitude"] || r["Lat"]);
         var lng = parseFloat(r["Longitude"] || r["Lng"]);
         
-        // Agar Lat/Lng blank hai lekin Hyperlink maujood hai
+        // If raw coordinates are not numbers, parse from the Google Maps hyperlink
         if ((!isFinite(lat) || !isFinite(lng)) && mapLink) {
           var parsed = parseCoordsFromUrl(mapLink);
-          if (parsed) { lat = parsed[0]; lng = parsed[1]; }
+          if (parsed) {
+            lat = parsed[0];
+            lng = parsed[1];
+          }
         }
         
         return {
@@ -756,10 +716,13 @@ function fetchLiveMaster() {
       saveRows();
       dir();
       all();
-      toast("● " + rows.length + " BPs Loaded Live with 100% Map Precision!");
+      toast("● " + rows.length + " BPs Loaded Live with GPS Precision!");
     })
     .catch(function(err) {
-      console.error("Live fetch error:", err);
+      console.error("Live fetch error:", err); toast("Sheet sync error - check internet / script URL");
     });
 }
+window.addEventListener("DOMContentLoaded", fetchLiveMaster);
+document.addEventListener("visibilitychange", function(){ if(!document.hidden) fetchLiveMaster(); });
+
 </script></body></html>
