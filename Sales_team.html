@@ -579,12 +579,14 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyakTMK67GeFaS8m6NaPHSCLmdMUtqwOlVS2WyA7ZbShi5M7Naa4bv_iirrZJTEzgurvA/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby43qBp7DUnDDxxCumFwXSjCTYdF_34nrnniC7lREo9mQyoDw5DHoPwA34tkj-Jfn9rSg/exec";
 
     // Application State
     let curLoc = null;
     let cachedBpList = [];
     let salesBase64Photo = "";
+    let salesRaw = null;     // bina watermark ki photo (watermark baad me latest naam/GPS ke saath lagta hai)
+    let gpsWatchId = null;
 
     const $ = id => document.getElementById(id);
 
@@ -681,74 +683,140 @@
       }
     }
 
-    // 2. Core GPS Function
+    // 2. Core GPS Function - kuch second tak sabse accurate location dhoondhta hai
     function fetchGPSCoordinates(callback) {
       if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser.");
         return;
       }
+      if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
 
       const box = $("gpsBox");
+      let best = null, finished = false, timer = null;
+      curLoc = null;
+      checkReady();
       box.className = "gps-box ok";
       box.style.display = "block";
       box.innerHTML = `
         <div style="display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-spinner fa-spin"></i> 
-          <span>Acquiring satellite coordinates... Please wait.</span>
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span id="gpsLive">Sabse accurate location dhoondh raha hoon... dukan ke paas khule me khade rahein.</span>
         </div>
       `;
 
-      navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          const lat = pos.coords.latitude.toFixed(6);
-          const lng = pos.coords.longitude.toFixed(6);
-          const acc = Math.round(pos.coords.accuracy);
-          const liveMapHyperlink = generateMapsUrl(lat, lng);
+      function stopWatch() {
+        clearTimeout(timer);
+        if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+      }
 
-          curLoc = {
-            lat: lat,
-            lng: lng,
-            accuracy: acc,
-            mapUrl: liveMapHyperlink
-          };
+      function finish() {
+        if (finished) return;
+        finished = true;
+        stopWatch();
+        if (!best) {
+          box.className = "gps-box err";
+          box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <b>GPS nahi mila.</b> Location/GPS ON karke dobara 'Acquire GPS' dabayein.`;
+          return;
+        }
+        const lat = best.coords.latitude.toFixed(6);
+        const lng = best.coords.longitude.toFixed(6);
+        const acc = Math.round(best.coords.accuracy);
+        const liveMapHyperlink = generateMapsUrl(lat, lng);
 
-          box.className = "gps-box ok";
-          box.innerHTML = `
-            <div>
-              <b style="color:var(--green-ok);"><i class="fa-solid fa-circle-check"></i> Live GPS Verified</b> 
-              <span style="font-size:11px; margin-left:4px;">(Accuracy: ±${acc}m)</span>
-            </div>
-            <div class="coords-preview">
-              <span class="coords-digits">${lat}, ${lng}</span>
-              <a href="${liveMapHyperlink}" target="_blank" rel="noopener noreferrer" class="btn-map-test">
-                <i class="fa-solid fa-location-arrow"></i> Test Map Pin
-              </a>
-            </div>
-            <div class="live-link-info">
-              <i class="fa-solid fa-link"></i> <b>Sheet Hyperlink:</b> ${liveMapHyperlink}
-            </div>
-          `;
+        if (acc > 100) {
+          // Bahut kamzor fix sheet me jaakar sahi pin ko kharab na kare
+          box.className = "gps-box err";
+          box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <b>GPS kamzor hai (±${acc}m).</b> Khule aasman ke neeche jaakar 'Acquire GPS' dobara dabayein, ya Maps link manually daalein.`;
           checkReady();
-          if (callback) callback(curLoc);
+          return;
+        }
+
+        curLoc = { lat: lat, lng: lng, accuracy: acc, mapUrl: liveMapHyperlink };
+        const good = acc <= 30;
+        box.className = "gps-box ok";
+        box.innerHTML = `
+          <div>
+            <b style="color:${good ? "var(--green-ok)" : "#b46d00"};"><i class="fa-solid ${good ? "fa-circle-check" : "fa-circle-exclamation"}"></i> ${good ? "Live GPS Verified" : "GPS theek-thaak (aur behtar ho sakta hai)"}</b>
+            <span style="font-size:11px; margin-left:4px;">(Accuracy: ±${acc}m)</span>
+          </div>
+          <div class="coords-preview">
+            <span class="coords-digits">${lat}, ${lng}</span>
+            <a href="${liveMapHyperlink}" target="_blank" rel="noopener noreferrer" class="btn-map-test">
+              <i class="fa-solid fa-location-arrow"></i> Test Map Pin
+            </a>
+          </div>
+          <div class="live-link-info">
+            <i class="fa-solid fa-link"></i> <b>Sheet Hyperlink:</b> ${liveMapHyperlink}
+          </div>
+        `;
+        checkReady();
+        renderSalesPhoto();
+        if (callback) callback(curLoc);
+      }
+
+      gpsWatchId = navigator.geolocation.watchPosition(
+        function(pos) {
+          if (finished) return;
+          if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+          const el = $("gpsLive");
+          if (el) el.textContent = "Accuracy abhi ±" + Math.round(best.coords.accuracy) + "m... behtar fix ka intezaar";
+          if (best.coords.accuracy <= 15) finish();
         },
         function(err) {
+          if (finished) return;
+          if (best) { finish(); return; }
+          finished = true;
+          stopWatch();
           curLoc = null;
           checkReady();
           box.className = "gps-box err";
           box.innerHTML = `
-            <i class="fa-solid fa-triangle-exclamation"></i> 
+            <i class="fa-solid fa-triangle-exclamation"></i>
             <b>GPS Error:</b> ${err.message}. Please enable device Location/GPS and grant browser permissions.
           `;
         },
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 }
       );
+      timer = setTimeout(finish, 20000);
     }
 
     $("btnGps").onclick = function() {
       fetchGPSCoordinates();
     };
 
-    // 3. Handle Click Photo (Takes Photo + Auto Stamp Dukan Naam + Auto GPS Trigger)
+    // 3. Click Photo: photo raw rakhta hai, watermark (dukan ka naam + GPS) latest values se lagta hai
+    function renderSalesPhoto() {
+      if (!salesRaw) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = salesRaw.width;
+      canvas.height = salesRaw.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(salesRaw, 0, 0);
+
+      const bannerHeight = 44;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.70)";
+      ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
+
+      const shopName = $("bpName").value.trim() || "Store Visit";
+      const repName = $("rep").value || "Sales Team";
+      const dateStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px -apple-system, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`${shopName} | ${repName}`, 14, canvas.height - 16);
+
+      ctx.font = "13px -apple-system, sans-serif";
+      ctx.fillStyle = "#facc15";
+      ctx.textAlign = "right";
+      const gpsText = curLoc && curLoc.lat ? `${curLoc.lat}, ${curLoc.lng}` : "GPS pending";
+      ctx.fillText(`${dateStr} | ${gpsText}`, canvas.width - 14, canvas.height - 16);
+
+      salesBase64Photo = canvas.toDataURL('image/jpeg', 0.72);
+      $("salesPhotoPreview").src = salesBase64Photo;
+      $("salesPhotoWrap").style.display = "block";
+    }
+
     function handleSalesPhoto(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -757,45 +825,15 @@
       reader.onload = function(evt) {
         const img = new Image();
         img.onload = function() {
-          const canvas = document.createElement('canvas');
           const MAX_WIDTH = 900;
-          const scale = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scale;
+          const raw = document.createElement('canvas');
+          raw.width = MAX_WIDTH;
+          raw.height = Math.round(img.height * (MAX_WIDTH / img.width));
+          raw.getContext('2d').drawImage(img, 0, 0, raw.width, raw.height);
+          salesRaw = raw;
+          renderSalesPhoto();
 
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          // Watermark Banner at Bottom (Semi-transparent black)
-          const bannerHeight = 44;
-          ctx.fillStyle = "rgba(0, 0, 0, 0.70)";
-          ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
-
-          // Get Dukan / BP Name & Sales Rep
-          const shopName = $("bpName").value.trim() || "Store Visit";
-          const repName = $("rep").value || "Sales Team";
-          const dateStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-
-          // Left Text: Dukan Name & Sales Rep
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 16px -apple-system, sans-serif";
-          ctx.textAlign = "left";
-          ctx.fillText(`${shopName} | ${repName}`, 14, canvas.height - 16);
-
-          // Right Text: Date & Live GPS
-          ctx.font = "13px -apple-system, sans-serif";
-          ctx.fillStyle = "#facc15";
-          ctx.textAlign = "right";
-          const gpsText = curLoc ? `${curLoc.lat}, ${curLoc.lng}` : "GPS Linked";
-          ctx.fillText(`${dateStr} | ${gpsText}`, canvas.width - 14, canvas.height - 16);
-
-          salesBase64Photo = canvas.toDataURL('image/jpeg', 0.72);
-
-          // Preview
-          $("salesPhotoPreview").src = salesBase64Photo;
-          $("salesPhotoWrap").style.display = "block";
-
-          // Photo lete hi GPS coordinates auto-fetch
+          // Photo lete hi GPS coordinates auto-fetch (fix milte hi watermark dobara banta hai)
           fetchGPSCoordinates();
         };
         img.src = evt.target.result;
@@ -805,6 +843,7 @@
 
     function retakeSalesPhoto() {
       salesBase64Photo = "";
+      salesRaw = null;
       $("salesPhotoInput").value = "";
       $("salesPhotoWrap").style.display = "none";
       $("salesPhotoInput").click();
@@ -927,6 +966,7 @@
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Saving to Google Sheet...`;
 
+      renderSalesPhoto();   // naam/rep baad me badle ho to bhi photo par sahi chhape
       const finalMapUrl = curLoc.mapUrl || generateMapsUrl(curLoc.lat, curLoc.lng) || "";
 
       const payload = {
@@ -972,6 +1012,7 @@
           $("salesPhotoWrap").style.display = "none";
           $("salesPhotoInput").value = "";
           salesBase64Photo = "";
+          salesRaw = null;
           btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Submit Location`;
           curLoc = null;
           checkReady();

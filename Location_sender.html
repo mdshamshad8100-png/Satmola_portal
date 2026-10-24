@@ -316,7 +316,7 @@
     };
 
     // Connected to the Master Web App deployment
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyakTMK67GeFaS8m6NaPHSCLmdMUtqwOlVS2WyA7ZbShi5M7Naa4bv_iirrZJTEzgurvA/exec";
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycby43qBp7DUnDDxxCumFwXSjCTYdF_34nrnniC7lREo9mQyoDw5DHoPwA34tkj-Jfn9rSg/exec";
     var BPS = [];
     function S(v){return String(v==null?"":v).trim()}
     var curBp = null;
@@ -356,19 +356,23 @@
         .then(function(data) {
           if (!Array.isArray(data) || data.length === 0) { toast("Sheet sync failed: " + (data && data.error ? data.error : "no data")); return; }
           BPS = data.map(function(r) {
-            // 100% Precision Coordinate Resolution
-            var lat = S(r["Latitude"] || r["Sales Lat"] || r["Driver Lat"] || r["Lat"]);
-            var lng = S(r["Longitude"] || r["Sales Lng"] || r["Driver Lng"] || r["Lng"]);
-            var link = S(r["Map Hyperlink"] || r["Sales Map Link"] || r["Driver Map Link"]);
-            var photo = S(r["Photo Link"] || r["Sales Photo Link"] || r["Driver Photo Link"] || r["photo link (Sales Team)"]);
-            
-            if ((!lat || !lng) && link) {
-              var p = parseCoordsFromUrl(link);
-              if (p) {
-                lat = p[0].toFixed(6);
-                lng = p[1].toFixed(6);
+            // Pin chunne ka niyam: Final (Google Map se verified) -> Driver -> Sales -> purane naam
+            var lat = "", lng = "";
+            var sets = [["Final Lat","Final Lng"],["Driver Lat","Driver Lng"],["Sales Lat","Sales Lng"],["Latitude","Longitude"],["Lat","Lng"]];
+            for (var i = 0; i < sets.length; i++) {
+              var a = parseFloat(r[sets[i][0]]), b = parseFloat(r[sets[i][1]]);
+              if (isFinite(a) && isFinite(b) && a > 6 && a < 38 && b > 67 && b < 98) { lat = a.toFixed(6); lng = b.toFixed(6); break; }
+            }
+            var link = S(r["Final Map Link"] || r["Driver Map Link"] || r["Sales Map Link"] || r["Map Hyperlink"]);
+            if (!lat || !lng) {
+              var links = [r["Final Map Link"], r["Driver Map Link"], r["Sales Map Link"], r["Map Hyperlink"]];
+              for (var j = 0; j < links.length; j++) {
+                var p = parseCoordsFromUrl(S(links[j]));
+                if (p && p[0] > 6 && p[0] < 38 && p[1] > 67 && p[1] < 98) { lat = p[0].toFixed(6); lng = p[1].toFixed(6); break; }
               }
             }
+            var photo = S(r["Photo Link"] || r["Sales Photo Link"] || r["Driver Photo Link"] || r["photo link (Sales Team)"]);
+            var hasPin = !!(lat && lng);
 
             return [
               r["BP Name"] || "",
@@ -380,10 +384,12 @@
               lat,
               lng,
               link,
-              photo
+              photo,
+              hasPin ? S(r["Location Confidence"]) : "",
+              hasPin ? S(r["Location Status"]) : ""
             ];
           }).filter(function(b) { return b[0]; });
-          toast("● " + BPS.length + " Parties Loaded Live with Photos & GPS!", 2200);
+          toast("● " + BPS.length + " Parties Loaded Live", 2200);
         }).catch(function(err) {
           console.error("Live fetch error:", err); toast("Sheet sync error - check internet / script URL");
         });
@@ -445,7 +451,9 @@
         lng: b[7],
         mapLink: b[8] || "",
         hasGps: hasGps,
-        photoUrl: photoUrl
+        photoUrl: photoUrl,
+        conf: b[10] || "",
+        ls: b[11] || ""
       };
 
       $("q").value = curBp.name;
@@ -467,7 +475,15 @@
       }
 
       if (curBp.hasGps) {
-        $("dLocTag").innerHTML = "<span class='tag gps'><i class='fa-solid fa-circle-check'></i> 100% Calibrated GPS Pin (" + curBp.lat + ", " + curBp.lng + ")</span>";
+        var coords = " (" + curBp.lat + ", " + curBp.lng + ")";
+        var why = curBp.ls ? " - " + curBp.ls : "";
+        if (curBp.conf === "High") {
+          $("dLocTag").innerHTML = "<span class='tag gps'><i class='fa-solid fa-circle-check'></i> Verified Pin" + why + coords + "</span>";
+        } else if (curBp.conf === "Low") {
+          $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-triangle-exclamation'></i> Pin check karo" + why + coords + "</span>";
+        } else {
+          $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-circle-dot'></i> Pin (ek source)" + why + coords + "</span>";
+        }
       } else {
         $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-circle-dot'></i> Approximate Area Pin</span>";
       }

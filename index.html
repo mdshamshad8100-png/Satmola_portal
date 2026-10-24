@@ -294,7 +294,7 @@ $("file").onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new Fi
 $("pBtn").onclick=function(){load($("paste").value)};$("dBtn").onclick=demo;
 var NL=String.fromCharCode(10),inc={},cr={};
 function own(r){var w=(r.owner||"").trim().split(/\s+/).filter(Boolean),h=w.length/2;if(w.length%2==0&&w.slice(0,h).join(" ")==w.slice(h).join(" "))w=w.slice(0,h);return w.join(" ")}
-function P(i){var r=rows[i],g=geo(r);return{name:r.name,addr:addr(r),q:(r.mq||qaddr(r)),lat:g?g[0]:null,lng:g?g[1]:null,zone:r.zone,mob:fmtMob(r.mobile),emp:r.emp,owner:own(r),i:i,approx:!(r.lat&&r.lng)}}
+function P(i){var r=rows[i],g=geo(r);return{name:r.name,addr:addr(r),q:(r.mq||qaddr(r)),lat:g?g[0]:null,lng:g?g[1]:null,zone:r.zone,mob:fmtMob(r.mobile),emp:r.emp,owner:own(r),i:i,approx:!(r.lat&&r.lng),conf:r.conf,ls:r.ls}}
 function mapUrl(p){return"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.lat!=null&&!p.approx?p.lat+","+p.lng:(p.q||p.addr))}
 function act(g,ri){var p=P(ri);
  if(g=="cp")copy(mapUrl(p));
@@ -310,7 +310,7 @@ function drawStops(){var t=totals();$("pTitle").textContent="Planned Stops ("+st
   +"<div class='sd'><div class='mu'>📍 "+esc(p.addr)+"</div><div>"+(p.zone?"<span class='tag'>"+esc(p.zone)+"</span>":"")+(p.emp?"<span class='tag'>Rep: "+esc(p.emp)+"</span>":"")+(p.owner?"<span class='tag'>Owner: "+esc(p.owner)+"</span>":"")+(p.mob?"<span class='tag'>📞 "+esc(p.mob)+"</span>":"")+(p.lat==null?"<span class='tag'>no location</span>":"")+"</div>"
   +"<div class='acts'><button class='o' data-g='loc'>📍 Locate Map</button><button data-g='nav'>➤ Google Maps Nav</button><button class='b' data-g='por'>Book via Porter</button><button class='o' data-g='cp'>Copy Location</button><button class='wa' data-g='wa'>WhatsApp</button><button class='g' data-g='pin'>Request Pin</button></div>"
   +"<div class='mu' style='margin:6px 0'>Leg: <b class='km'>"+(d!=null?d.toFixed(1)+" km":"—")+"</b>"+(d!=null?" · ~"+fm(d/speed*60):"")+"</div></div></div>"}).join("")||"<div class='mu' style='padding:14px;text-align:center'>No stops. Search above to add.</div>"}
-function resHtml(i){var r=rows[i];return"<div class='sr' style='flex-wrap:wrap' data-ri='"+i+"'><div data-g='add' style='cursor:pointer;flex:1 1 180px'>"+esc(r.name)+"<small>"+esc(r.city)+" · "+esc(r.zone)+"</small></div><div class='acts' style='margin:0'><button data-g='add'>+ Add</button><button class='b' data-g='por'>Book via Porter</button><button class='wa' data-g='wa'>WhatsApp</button><button class='o' data-g='cp'>Copy Location</button></div></div>"}
+function resHtml(i){var r=rows[i];return"<div class='sr' style='flex-wrap:wrap' data-ri='"+i+"'><div data-g='add' style='cursor:pointer;flex:1 1 180px'>"+esc(r.name)+"<small>"+esc(r.city)+" · "+esc(r.zone)+" · "+esc(pinTag(r))+(r.ls?" ("+esc(r.ls)+")":"")+"</small></div><div class='acts' style='margin:0'><button data-g='add'>+ Add</button><button class='b' data-g='por'>Book via Porter</button><button class='wa' data-g='wa'>WhatsApp</button><button class='o' data-g='cp'>Copy Location</button></div></div>"}
 $("q").oninput=function(){var q=this.value.trim();if(!q){$("res").innerHTML="";return}$("res").innerHTML=match(q).slice(0,10).map(resHtml).join("")||"<div class='mu'>No results</div>"};
 $("res").onclick=function(e){var b=e.target.closest("[data-g]");if(!b)return;var i=+b.closest("[data-ri]").dataset.ri;if(b.dataset.g=="add")add(i);else act(b.dataset.g,i)};
 function dir(){var q=$("dq").value.toLowerCase();$("dn").textContent=rows.length;var l=[];rows.forEach(function(r,i){if(!q||(r.name+" "+r.city+" "+r.block).toLowerCase().indexOf(q)>-1)l.push(i)});$("dlist").innerHTML=l.slice(0,200).map(resHtml).join("")+(l.length>200?"<div class='mu'>Showing the first 200. Use search to narrow down.</div>":"")}
@@ -385,7 +385,7 @@ $("vw").onclick=function(){viewReal=!viewReal;drawMap()};
 var _s=$("sim").onclick;$("sim").onclick=function(){viewReal=false;drawMap();_s()};
 var _d=$("dirs").onclick;$("dirs").onclick=function(){if(SBX){viewReal=true;focus=null;drawMap();$("mapBox").scrollIntoView({behavior:"smooth",block:"center"});toast("Route shown on the real map")}else _d()};
 function qaddr(r){var p=[r.name,r.block,r.city,r.state].map(clean).filter(Boolean),o=[];p.forEach(function(x){if(!o.some(function(y){return y.toUpperCase().indexOf(x.toUpperCase())>-1}))o.push(x)});return o.join(", ")+", India"}
-$("llGo").onclick=function(){var v=$("llI").value,m=v.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||v.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/)||v.match(/(-?\d+\.\d+)\s+(-?\d+\.\d+)/);if(!m)return toast("Paste lat,lng or a full Google Maps link");rows[llRi].lat=parseFloat(m[1]);rows[llRi].lng=parseFloat(m[2]);$("llM").classList.remove("on");all()};
+$("llGo").onclick=function(){var v=$("llI").value,m=v.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||v.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/)||v.match(/(-?\d+\.\d+)\s+(-?\d+\.\d+)/);if(!m)return toast("Paste lat,lng or a full Google Maps link");rows[llRi].lat=parseFloat(m[1]);rows[llRi].lng=parseFloat(m[2]);rows[llRi].conf="Manual";rememberPin(rows[llRi].name,rows[llRi].lat,rows[llRi].lng);$("llM").classList.remove("on");all()};
 var prevRi=null,svT=null;
 function refLine(r){return[r.block,r.city,r.zone,r.emp].map(clean).filter(Boolean).join(" · ")}
 function refHtml(r){var x=r&&r.x||{},k=Object.keys(x);if(!k.length)return"";return"<div class='ref'>"+k.map(function(a){return"<span><b>"+esc(a)+":</b> "+esc(x[a])+"</span>"}).join("")+"</div>"}
@@ -400,7 +400,7 @@ function match(q){var t=wordsOf(q);if(!t.length)return[];var full=t.join(" "),ou
 $("q").oninput=function(){var q=this.value.trim();if(!q){$("res").innerHTML="";return}if(!rows.length){$("res").innerHTML="<div class='mu'>No BP data yet. Load your CSV in the Directory tab.</div>";return}$("res").innerHTML=match(q).slice(0,10).map(resHtml).join("")||"<div class='mu'>No results</div>"};
 function dir(){var q=$("dq").value.trim(),l=q?match(q):rows.map(function(r,i){return i});$("dn").textContent=rows.length;document.querySelector('[data-t="dir"]').textContent="Directory ("+rows.length+")";$("dlist").innerHTML=l.slice(0,200).map(resHtml).join("")+(l.length>200?"<div class='mu'>Showing the first 200. Use search to narrow down.</div>":"")||"<div class='mu'>No BP data loaded. Choose your DIWALI CSV above.</div>"}
 function load(text){var t=parse(text);if(t.length<2)return toast("No data found");var H=t[0].map(function(x){return x.trim()}),h=H.map(function(x){return x.toLowerCase()}),ix=function(n){return h.indexOf(n)};
- var m={name:ix("bp name"),city:ix("city name"),block:ix("bill-to block"),zone:ix("zone name"),emp:ix("sales employee"),group:ix("group"),state:ix("state"),mobile:ix("mobile"),owner:ix("owner"),lat:ix("lat"),lng:ix("lng")};
+ var m={name:ix("bp name"),city:ix("city name"),block:ix("bill-to block"),zone:ix("zone name"),emp:ix("sales employee"),group:ix("group"),state:ix("state"),mobile:ix("mobile"),owner:ix("owner"),lat:ix("final lat")>=0?ix("final lat"):ix("driver lat")>=0?ix("driver lat"):ix("sales lat")>=0?ix("sales lat"):ix("lat"),lng:ix("final lng")>=0?ix("final lng"):ix("driver lng")>=0?ix("driver lng"):ix("sales lng")>=0?ix("sales lng"):ix("lng")};
  if(m.name<0)return toast("Header must include BP Name");
  rows=t.slice(1).map(function(r){var g=function(k){return k<0?"":(r[k]||"").trim()},x={};H.forEach(function(k,i){var v=(r[i]||"").trim();if(k&&v&&!/^(not found|not available)$/i.test(v))x[k]=v});
   return{name:g(m.name),city:g(m.city),block:g(m.block),zone:g(m.zone),emp:g(m.emp),group:g(m.group),state:g(m.state),mobile:g(m.mobile),owner:g(m.owner),lat:g(m.lat),lng:g(m.lng),x:x,all:Object.keys(x).map(function(k){return x[k]}).join(" ")}}).filter(function(r){return r.name});
@@ -439,7 +439,7 @@ function drawLeaf(){if(typeof L==="undefined"){loadLeaf();return}
  p.forEach(function(x,i){if(i>0)needG(x.i);if(x.lat==null)return;var c=[x.lat,x.lng];ll.push(c);
   var mk=L.marker(c,{draggable:i>0,icon:L.divIcon({className:"",iconSize:[26,26],iconAnchor:[13,13],html:"<div style='background:"+(i?"#d91f2f":"#7a0a14")+";color:#fff;border:2px solid #fff;border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font-weight:800;font-size:12px'>"+(i?(prevRi!=null?"P":i):"H")+"</div>"})}).addTo(lyr);
   mk.bindTooltip(x.name+(i&&x.approx?" (approx, drag to fix)":""));
-  if(i>0)mk.on("dragend",function(e){var g=e.target.getLatLng();rows[x.i].lat=g.lat;rows[x.i].lng=g.lng;toast("Exact pin saved");all()})});
+  if(i>0)mk.on("dragend",function(e){var g=e.target.getLatLng();rows[x.i].lat=g.lat;rows[x.i].lng=g.lng;rows[x.i].conf="Manual";rememberPin(rows[x.i].name,g.lat,g.lng);toast("Exact pin saved");all()})});
  if(ll.length>1)L.polyline(ll,{color:"#d91f2f",weight:4,opacity:.8}).addTo(lyr);
  var sg=p.map(function(x){return x.i}).join();if(sg!==_sig){_sig=sg;if(ll.length)lmap.fitBounds(ll,{padding:[30,30],maxZoom:15});else lmap.setView([28.6,77.3],10)}}
 function realMap(){var show=viewReal,g=show&&eng=="google"&&!SBX,o=show&&eng=="osm"&&!SBX,b=show&&SBX;
@@ -452,7 +452,7 @@ $("dirs").onclick=_d;
 $("cfgB").onclick=function(){var c=cfg();$("sWeb").value=c.web||"";$("sApp").value=c.app||"";$("cfgM").classList.add("on")};
 $("sSave").onclick=function(){var w=$("sWeb").value.trim(),a=$("sApp").value.trim();if(w&&!/^https?:\/\//i.test(w))return toast("Website link must start with https://");try{localStorage.setItem("satCfg",JSON.stringify({web:w,app:a}))}catch(e){}$("cfgM").classList.remove("on");toast("Settings saved")};
 $("ogm").onclick=function(){go(rmUrl().replace("&output=embed",""))};
-function refLine(r){var a=[];if(clean(r.city))a.push("City: "+clean(r.city));if(clean(r.block))a.push("Bill-to: "+clean(r.block));return a.join(" · ")}
+function refLine(r){var a=[];if(clean(r.city))a.push("City: "+clean(r.city));if(clean(r.block))a.push("Bill-to: "+clean(r.block));a.push(pinTag(r));return a.join(" · ")}
 function refHtml(){return""}
 function card(){$("card").style.display="none"}
 function drawStops(){var t=totals();$("pTitle").textContent="Planned Stops ("+stops.length+" BP Orders)";$("hubBox").innerHTML=esc(HUBS[hubK].n)+"<small>"+esc(HUBS[hubK].a)+"</small>";
@@ -671,7 +671,7 @@ $("shPdf").onclick=function(){if(!stops.length)return toast("Add stops first");t
 $("shPr").onclick=function(){if(!stops.length)return toast("Add stops first");setPage();if(SBX){toast("Print is blocked inside Claude, so the PDF is being saved. Open it and print.");$("shPdf").onclick();return}try{window.print()}catch(e){$("shPdf").onclick()}};
 loadSaved();stops=[];dir();all();
 
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyakTMK67GeFaS8m6NaPHSCLmdMUtqwOlVS2WyA7ZbShi5M7Naa4bv_iirrZJTEzgurvA/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycby43qBp7DUnDDxxCumFwXSjCTYdF_34nrnniC7lREo9mQyoDw5DHoPwA34tkj-Jfn9rSg/exec";
 
 function parseCoordsFromUrl(url) {
   if (!url) return null;
@@ -682,56 +682,98 @@ function parseCoordsFromUrl(url) {
 }
 
 function S(v){return String(v==null?"":v).trim()}
+// ---- Pin chunne ka niyam: Final (Google Map se verified) -> Driver -> Sales -> purane column naam
+function pinFromRow(r) {
+  var sets = [["Final Lat","Final Lng"],["Driver Lat","Driver Lng"],["Sales Lat","Sales Lng"],["Latitude","Longitude"],["Lat","Lng"]];
+  for (var i = 0; i < sets.length; i++) {
+    var a = parseFloat(r[sets[i][0]]), b = parseFloat(r[sets[i][1]]);
+    if (isFinite(a) && isFinite(b) && a > 6 && a < 38 && b > 67 && b < 98) return [a, b];
+  }
+  var links = ["Final Map Link","Driver Map Link","Sales Map Link","Map Hyperlink"];
+  for (var j = 0; j < links.length; j++) {
+    var p = parseCoordsFromUrl(S(r[links[j]]));
+    if (p && p[0] > 6 && p[0] < 38 && p[1] > 67 && p[1] < 98) return p;
+  }
+  return null;
+}
+
+// Aapne jo pin haath se set kiya (Set lat,lng / marker drag) wo yaad rakhta hai, refresh par nahi jata
+var OVR = {};
+try { OVR = JSON.parse(localStorage.getItem("satOvr") || "{}") || {}; } catch (e) { OVR = {}; }
+function rememberPin(name, lat, lng) {
+  OVR[name] = [lat, lng];
+  try { localStorage.setItem("satOvr", JSON.stringify(OVR)); } catch (e) {}
+}
+function pinTag(r) {
+  if (r.conf === "Manual") return "● Aapka set kiya pin";
+  if (!(r.lat && r.lng)) return "○ Sirf area ka andaza";
+  if (r.conf === "High") return "✔ Verified pin";
+  if (r.conf === "Low") return "⚠ Pin check karo";
+  return "● Pin (ek source)";
+}
+
 function fetchLiveMaster() {
   toast("Syncing live BP Master from Google Sheet...");
   fetch(SCRIPT_URL)
     .then(function(res) { return res.json(); })
     .then(function(data) {
       if (!Array.isArray(data) || data.length === 0) { toast("Sheet sync failed: " + (data && data.error ? data.error : "no data")); return; }
-      rows = data.map(function(r) {
+
+      // Refresh se pehle: route ke stops ka naam yaad rakho (index badal sakta hai)
+      var old = rows, oldByName = {};
+      old.forEach(function(r) { oldByName[r.name] = r; });
+      var keepNames = stops.map(function(i) { return old[i] && old[i].name; });
+      var selName = (selI >= 0 && stops[selI] != null && old[stops[selI]]) ? old[stops[selI]].name : null;
+      var prevName = (prevRi != null && old[prevRi]) ? old[prevRi].name : null;
+      var oldInc = {}, oldCr = {};
+      Object.keys(inc).forEach(function(k) { if (old[k]) oldInc[old[k].name] = inc[k]; });
+      Object.keys(cr).forEach(function(k) { if (old[k]) oldCr[old[k].name] = cr[k]; });
+
+      var fresh = data.map(function(r) {
         var name = S(r["BP Name"]);
-        var city = S(r["City Name"] || r["Ship-to City"]);
-        var block = S(r["Bill-to Block"]);
-        var zone = S(r["Zone Name"]);
-        var emp = S(r["Sales Employee"]);
-        var group = S(r["GRoup"]);
-        var state = S(r["State"]);
-        var mobile = fmtMob(S(r["Mobile"]));
-        var owner = S(r["Owner"]);
-        var mapLink = S(r["Map Hyperlink"]);
-        
-        var lat = parseFloat(r["Latitude"] || r["Lat"]);
-        var lng = parseFloat(r["Longitude"] || r["Lng"]);
-        
-        // If raw coordinates are not numbers, parse from the Google Maps hyperlink
-        if ((!isFinite(lat) || !isFinite(lng)) && mapLink) {
-          var parsed = parseCoordsFromUrl(mapLink);
-          if (parsed) {
-            lat = parsed[0];
-            lng = parsed[1];
-          }
-        }
-        
-        return {
+        var pin = pinFromRow(r);
+        var row = {
           name: name,
-          city: city,
-          block: block,
-          zone: zone,
-          emp: emp,
-          group: group,
-          state: state,
-          mobile: mobile,
-          owner: owner,
-          lat: isFinite(lat) ? lat : "",
-          lng: isFinite(lng) ? lng : "",
-          mapLink: mapLink,
-          all: (name + " " + city + " " + block + " " + zone + " " + emp + " " + mobile).toLowerCase()
+          city: S(r["City Name"] || r["Ship-to City"]),
+          block: S(r["Bill-to Block"]),
+          zone: S(r["Zone Name"]),
+          emp: S(r["Sales Employee"]),
+          group: S(r["GRoup"]),
+          state: S(r["State"]),
+          mobile: fmtMob(S(r["Mobile"])),
+          owner: S(r["Owner"]),
+          lat: pin ? pin[0] : "",
+          lng: pin ? pin[1] : "",
+          conf: pin ? S(r["Location Confidence"]) : "",
+          ls: pin ? S(r["Location Status"]) : "",
+          mapLink: S(r["Final Map Link"] || r["Driver Map Link"] || r["Sales Map Link"] || r["Map Hyperlink"])
         };
+        var o = OVR[name];
+        if (o) { row.lat = o[0]; row.lng = o[1]; row.conf = "Manual"; row.ls = "Manual pin"; }
+        var prev = oldByName[name];
+        if (prev) { if (prev.g !== undefined) row.g = prev.g; if (prev.mq) row.mq = prev.mq; }
+        row.all = (name + " " + row.city + " " + row.block + " " + row.zone + " " + row.emp + " " + row.mobile).toLowerCase();
+        return row;
       }).filter(function(r) { return r.name; });
+
+      var idx = {};
+      fresh.forEach(function(r, i) { idx[r.name] = i; });
+      // Sirf local me jode gaye (abhi sheet me na pahunche) stops ko na gawao
+      keepNames.forEach(function(n) { if (n && idx[n] === undefined && oldByName[n]) { idx[n] = fresh.length; fresh.push(oldByName[n]); } });
+
+      rows = fresh;
+      stops = keepNames.map(function(n) { return idx[n]; }).filter(function(i) { return i !== undefined; });
+      selI = selName != null && idx[selName] !== undefined ? stops.indexOf(idx[selName]) : -1;
+      prevRi = prevName != null && idx[prevName] !== undefined ? idx[prevName] : null;
+      inc = {}; cr = {};
+      Object.keys(oldInc).forEach(function(n) { if (idx[n] !== undefined) inc[idx[n]] = oldInc[n]; });
+      Object.keys(oldCr).forEach(function(n) { if (idx[n] !== undefined) cr[idx[n]] = oldCr[n]; });
+
       saveRows();
       dir();
       all();
-      toast("● " + rows.length + " BPs Loaded Live with GPS Precision!");
+      var ver = rows.filter(function(r) { return r.conf === "High"; }).length;
+      toast("● " + rows.length + " BPs loaded · " + ver + " verified pins");
     })
     .catch(function(err) {
       console.error("Live fetch error:", err); toast("Sheet sync error - check internet / script URL");

@@ -172,6 +172,15 @@
       <span id="gpsStatusText" class="status-text">Acquiring GPS location...</span>
     </div>
 
+    <!-- Step 0: Dukan ka naam -->
+    <div style="margin-bottom:12px;">
+      <label for="shopName" style="display:block;font-size:12px;font-weight:700;color:#64748b;margin-bottom:5px;">DUKAN / PARTY KA NAAM</label>
+      <input type="text" id="shopName" list="bpNames" placeholder="Naam likhna shuru karo, list se chuno" autocomplete="off"
+        style="width:100%;padding:13px 14px;border:1.5px solid #cbd5e1;border-radius:12px;font-size:15px;outline:none;background:#fff;box-sizing:border-box;">
+      <datalist id="bpNames"></datalist>
+      <div id="shopHint" style="font-size:11px;margin-top:4px;color:#64748b;"></div>
+    </div>
+
     <!-- Step 1: Camera Trigger -->
     <label id="cameraTriggerBox" class="camera-upload" for="cameraInput">
       <input type="file" id="cameraInput" accept="image/*" capture="environment">
@@ -205,14 +214,19 @@
   let currentLng = null;
   let base64Photo = "";
   let driverName = "";
+  let currentAcc = null;
+  let rawCanvas = null;
 
   // Target Checkin Sheet URL (for admin viewing)
   const CHECKIN_SHEET_URL = "https://docs.google.com/spreadsheets/d/1rgziIYFizsfA6haVZT43pQynLNiPont4LME3jwHePOc/edit";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyakTMK67GeFaS8m6NaPHSCLmdMUtqwOlVS2WyA7ZbShi5M7Naa4bv_iirrZJTEzgurvA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw27iL_FN5e0OVdiqroY7UIHcbTDOSpWUzw99frH66autBqifzRwaCNx4z7zVrQXJZ0/exec";
+  const BP_LIST_URL = "https://script.google.com/macros/s/AKfycby43qBp7DUnDDxxCumFwXSjCTYdF_34nrnniC7lREo9mQyoDw5DHoPwA34tkj-Jfn9rSg/exec";   // dukan ke naam ki list yahin se aati hai
+
+  function istDate() { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); }
 
   // 1. Daily Visit Counter
   function displayCurrentVisitBadge() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = istDate();
     const storedDate = localStorage.getItem("satmola_visit_date");
     let count = parseInt(localStorage.getItem("satmola_visit_count") || "0", 10);
     if (storedDate !== today) count = 0;
@@ -292,33 +306,137 @@
     document.getElementById("driverModal").style.display = "flex";
   }
 
-  // 4. Geolocation Tracking
-  function fetchLocation() {
+  // 4. Geolocation: kuch second me sabse accurate fix chunta hai (sirf ek reading nahi)
+  let gpsWatch = null;
+  function acquireFix(maxMs, goodAcc) {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      if (gpsWatch !== null) { navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; }
+      let best = null, done = false, timer = null;
+      function end() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        if (gpsWatch !== null) { navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; }
+        resolve(best);
+      }
+      gpsWatch = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (done) return;
+          if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+          document.getElementById('gpsStatusText').innerText = `Location le raha hai... ±${Math.round(best.coords.accuracy)}m`;
+          if (best.coords.accuracy <= goodAcc) end();
+        },
+        () => end(),
+        { enableHighAccuracy: true, timeout: maxMs, maximumAge: 0 }
+      );
+      timer = setTimeout(end, maxMs);
+    });
+  }
+
+  async function fetchLocation() {
     const card = document.getElementById('gpsStatusCard');
     const text = document.getElementById('gpsStatusText');
+    currentLat = null; currentLng = null; currentAcc = null;
+    card.className = "status-card";
+    text.innerText = "Acquiring GPS location...";
 
     if (!navigator.geolocation) {
       card.className = "status-card error";
       text.innerText = "GPS not supported";
       return;
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
+    const pos = await acquireFix(18000, 15);
+    if (!pos) {
+      card.className = "status-card error";
+      text.innerText = "GPS nahi mila - phone ka GPS ON karo, phir yahan tap karo";
+    } else {
+      const acc = Math.round(pos.coords.accuracy);
+      if (acc > 100) {
+        card.className = "status-card error";
+        text.innerText = `GPS kamzor (±${acc}m) - khule me jaakar yahan tap karo`;
+      } else {
         currentLat = pos.coords.latitude.toFixed(6);
         currentLng = pos.coords.longitude.toFixed(6);
+        currentAcc = acc;
         card.className = "status-card active";
-        text.innerText = `GPS Active (${currentLat}, ${currentLng})`;
-      },
-      () => {
-        card.className = "status-card error";
-        text.innerText = "Please turn on phone GPS";
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+        text.innerText = `GPS Active ±${acc}m (${currentLat}, ${currentLng})`;
+      }
+    }
+    updateSubmit();
+  }
+  document.getElementById('gpsStatusCard').addEventListener('click', function () {
+    if (this.classList.contains('error')) fetchLocation().then(renderDriverPhoto);
+  });
+
+  function updateSubmit() {
+    const shop = document.getElementById('shopName').value.trim();
+    document.getElementById('submitBtn').disabled = !(base64Photo && currentLat && currentLng && shop);
   }
 
-  // 5. Camera & Auto Watermark Stamp
+  // Dukan ke naam ki list (BP Master se). Net na ho to pichli saved list chalegi
+  function fillShopList(names) {
+    const dl = document.getElementById('bpNames');
+    dl.innerHTML = names.map(n => `<option value="${String(n).replace(/"/g, '&quot;')}"></option>`).join("");
+    window.__bpNames = names;
+  }
+  (function loadShopNames() {
+    try { fillShopList(JSON.parse(localStorage.getItem("satmola_bp_names") || "[]")); } catch (e) {}
+    fetch(BP_LIST_URL).then(r => r.json()).then(data => {
+      if (!Array.isArray(data)) return;
+      const names = Array.from(new Set(data.map(r => r["BP Name"]).filter(Boolean)));
+      if (names.length) {
+        fillShopList(names);
+        try { localStorage.setItem("satmola_bp_names", JSON.stringify(names)); } catch (e) {}
+      }
+    }).catch(() => {});
+  })();
+  document.getElementById('shopName').addEventListener('input', function () {
+    const v = this.value.trim().toLowerCase();
+    const hint = document.getElementById('shopHint');
+    const list = window.__bpNames || [];
+    if (!v || !list.length) hint.innerText = "";
+    else if (list.some(n => String(n).trim().toLowerCase() === v)) { hint.style.color = "#16a34a"; hint.innerText = "✓ Dukan list me mili"; }
+    else { hint.style.color = "#d97706"; hint.innerText = "Ye naam list me nahi mila - sahi spelling ho to aise hi aage badho"; }
+    updateSubmit();
+    renderDriverPhoto();
+  });
+
+  // 5. Camera & Auto Watermark Stamp (photo raw rakhi jaati hai, stamp latest naam/GPS se lagta hai)
+  function renderDriverPhoto() {
+    if (!rawCanvas) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = rawCanvas.width;
+    canvas.height = rawCanvas.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(rawCanvas, 0, 0);
+
+    const bannerHeight = 62;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.68)";
+    ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
+
+    const dateStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    const visitLabel = document.getElementById("dailyVisitLabel").innerText;
+    const shop = document.getElementById('shopName').value.trim() || "Dukan ka naam";
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 18px -apple-system, sans-serif";
+    ctx.fillText(shop.length > 48 ? shop.slice(0, 47) + "…" : shop, 14, canvas.height - 38);
+
+    ctx.font = "bold 14px -apple-system, sans-serif";
+    ctx.fillText(`${visitLabel} | ${driverName || 'Driver'}`, 14, canvas.height - 14);
+
+    ctx.font = "13px -apple-system, sans-serif";
+    ctx.fillStyle = "#facc15";
+    ctx.textAlign = "right";
+    ctx.fillText(`${dateStr} | ${currentLat ? currentLat + ', ' + currentLng : 'GPS pending'}`, canvas.width - 14, canvas.height - 14);
+
+    base64Photo = canvas.toDataURL('image/jpeg', 0.72);
+    document.getElementById('previewImg').src = base64Photo;
+    updateSubmit();
+  }
+
   document.getElementById('cameraInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -327,38 +445,20 @@
     reader.onload = function(evt) {
       const img = new Image();
       img.onload = function() {
-        const canvas = document.createElement('canvas');
         const MAX_WIDTH = 900;
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        // Watermark Banner
-        const bannerHeight = 44;
-        ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-        ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
-
-        // Stamp Text
-        const dateStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-        const visitLabel = document.getElementById("dailyVisitLabel").innerText;
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 17px -apple-system, sans-serif";
-        ctx.fillText(`${visitLabel} | ${driverName || 'Driver'}`, 14, canvas.height - 18);
-
-        ctx.font = "14px -apple-system, sans-serif";
-        ctx.fillStyle = "#facc15";
-        ctx.textAlign = "right";
-        ctx.fillText(`${dateStr} | ${currentLat || 'GPS'}, ${currentLng || ''}`, canvas.width - 14, canvas.height - 18);
-
-        base64Photo = canvas.toDataURL('image/jpeg', 0.72);
+        const raw = document.createElement('canvas');
+        raw.width = MAX_WIDTH;
+        raw.height = Math.round(img.height * (MAX_WIDTH / img.width));
+        raw.getContext('2d').drawImage(img, 0, 0, raw.width, raw.height);
+        rawCanvas = raw;
 
         document.getElementById('cameraTriggerBox').style.display = 'none';
         document.getElementById('reviewContainer').style.display = 'flex';
-        document.getElementById('previewImg').src = base64Photo;
-        document.getElementById('submitBtn').disabled = false;
+        renderDriverPhoto();
+
+        // Location photo lete waqt ki hi leni hai (page kholte waqt ki nahi)
+        document.getElementById('submitBtn').disabled = true;
+        fetchLocation().then(renderDriverPhoto);
       };
       img.src = evt.target.result;
     };
@@ -367,6 +467,7 @@
 
   function retakePhoto() {
     base64Photo = "";
+    rawCanvas = null;
     document.getElementById('cameraInput').value = "";
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('cameraInput').click();
@@ -374,7 +475,9 @@
 
   // 6. Submit Payload & Save Local Admin History
   async function submitCheckIn() {
+    const shopName = document.getElementById('shopName').value.trim();
     if (!driverName) { alert("Driver name missing!"); return; }
+    if (!shopName) { alert("Dukan ka naam daalo."); return; }
     if (!currentLat || !currentLng) { alert("GPS location missing. Please enable location."); return; }
     if (!base64Photo) { alert("Please take a storefront photo."); return; }
 
@@ -382,15 +485,20 @@
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
 
+    renderDriverPhoto();   // latest naam / visit number ke saath photo final
     const visitLabel = document.getElementById("dailyVisitLabel").innerText;
+    const visitNo = parseInt(visitLabel.replace(/\D/g, ""), 10) || "";
     const timeNow = new Date().toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' });
     const mapUrl = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
 
     const payload = {
       type: "driver_checkin",
       driverName: driverName,
+      shopName: shopName,
+      visitNo: visitNo,
       latitude: currentLat,
       longitude: currentLng,
+      accuracy: currentAcc,
       mapLink: mapUrl,
       photo: base64Photo
     };
@@ -415,20 +523,24 @@
 
       // Update visit count
       const currentCount = parseInt(localStorage.getItem("satmola_visit_count") || "0", 10);
-      const today = new Date().toISOString().slice(0, 10);
+      const today = istDate();
       localStorage.setItem("satmola_visit_date", today);
       localStorage.setItem("satmola_visit_count", (currentCount + 1).toString());
 
-      alert(`✓ Check-in Submitted Successfully!\n${visitLabel} recorded for ${driverName}`);
+      alert(`✓ Check-in Submitted Successfully!\n${shopName}\n${visitLabel} recorded for ${driverName}`);
 
       // Reset state
       base64Photo = "";
+      rawCanvas = null;
+      document.getElementById('shopName').value = "";
+      document.getElementById('shopHint').innerText = "";
       document.getElementById('cameraInput').value = "";
       document.getElementById('reviewContainer').style.display = 'none';
       document.getElementById('cameraTriggerBox').style.display = 'flex';
       displayCurrentVisitBadge();
       submitBtn.innerText = "Submit Visit Check-in";
       submitBtn.disabled = true;
+      fetchLocation();
 
     } catch (err) {
       alert("Submission error. Please check your connection.");
