@@ -172,13 +172,24 @@
       <span id="gpsStatusText" class="status-text">Acquiring GPS location...</span>
     </div>
 
-    <!-- Step 0: Dukan ka naam -->
+    <!-- Step 0: Dukan ka naam (optional) - type karo ya bol kar likhwao -->
     <div style="margin-bottom:12px;">
-      <label for="shopName" style="display:block;font-size:12px;font-weight:700;color:#64748b;margin-bottom:5px;">DUKAN / PARTY KA NAAM</label>
-      <input type="text" id="shopName" list="bpNames" placeholder="Naam likhna shuru karo, list se chuno" autocomplete="off"
-        style="width:100%;padding:13px 14px;border:1.5px solid #cbd5e1;border-radius:12px;font-size:15px;outline:none;background:#fff;box-sizing:border-box;">
-      <datalist id="bpNames"></datalist>
-      <div id="shopHint" style="font-size:11px;margin-top:4px;color:#64748b;"></div>
+      <label for="shopName" style="display:block;font-size:12px;font-weight:700;color:#64748b;margin-bottom:5px;">STORE NAME <span style="font-weight:600;color:#94a3b8;">(OPTIONAL)</span></label>
+      <div style="display:flex;gap:8px;align-items:stretch;">
+        <input type="text" id="shopName" list="bpNames" placeholder="Type karo ya mic dabakar bolo" autocomplete="off"
+          style="flex:1;min-width:0;padding:13px 14px;border:1.5px solid #cbd5e1;border-radius:12px;font-size:15px;outline:none;background:#fff;box-sizing:border-box;">
+        <button type="button" id="micBtn" title="Bol kar naam likho" aria-label="Voice input"
+          style="flex:0 0 52px;border:1.5px solid #cbd5e1;border-radius:12px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="#dc2626"><path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-3.08A7 7 0 0019 11h-2z"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;gap:8px;">
+        <div id="shopHint" style="font-size:11px;color:#64748b;"></div>
+        <select id="voiceLang" style="font-size:11px;border:1px solid #cbd5e1;border-radius:8px;padding:3px 6px;background:#fff;color:#475569;">
+          <option value="en-IN">Voice: English</option>
+          <option value="hi-IN">Voice: हिन्दी</option>
+        </select>
+      </div>
     </div>
 
     <!-- Step 1: Camera Trigger -->
@@ -219,8 +230,8 @@
 
   // Target Checkin Sheet URL (for admin viewing)
   const CHECKIN_SHEET_URL = "https://docs.google.com/spreadsheets/d/1rgziIYFizsfA6haVZT43pQynLNiPont4LME3jwHePOc/edit";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw27iL_FN5e0OVdiqroY7UIHcbTDOSpWUzw99frH66autBqifzRwaCNx4z7zVrQXJZ0/exec";
-  const BP_LIST_URL = "https://script.google.com/macros/s/AKfycby43qBp7DUnDDxxCumFwXSjCTYdF_34nrnniC7lREo9mQyoDw5DHoPwA34tkj-Jfn9rSg/exec";   // dukan ke naam ki list yahin se aati hai
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyEK6Gg3DZ1dLlxshbfcBfx5SHjxcGz7PF0_ydLhE3PC5JVKPLuWZYS68jV_uWk5Mw/exec";
+  const BP_LIST_URL = "https://script.google.com/macros/s/AKfycbzYA8xX6M3Ado6LbAaJNljdNFqty-za_bR8J_CsEknjrNA2J2btCF2v0RDcXIyLW53KnA/exec";   // dukan ke naam ki list yahin se aati hai
 
   function istDate() { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); }
 
@@ -370,8 +381,7 @@
   });
 
   function updateSubmit() {
-    const shop = document.getElementById('shopName').value.trim();
-    document.getElementById('submitBtn').disabled = !(base64Photo && currentLat && currentLng && shop);
+    document.getElementById('submitBtn').disabled = !(base64Photo && currentLat && currentLng);
   }
 
   // Dukan ke naam ki list (BP Master se). Net na ho to pichli saved list chalegi
@@ -402,6 +412,33 @@
     renderDriverPhoto();
   });
 
+  // Voice se naam likhna (Chrome / Android). Support na ho to mic chhup jata hai
+  (function setupVoice() {
+    const btn = document.getElementById('micBtn');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { btn.style.display = 'none'; document.getElementById('voiceLang').style.display = 'none'; return; }
+    let rec = null, listening = false;
+    btn.addEventListener('click', function () {
+      if (listening && rec) { rec.stop(); return; }
+      rec = new SR();
+      rec.lang = document.getElementById('voiceLang').value;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onstart = function () { listening = true; btn.style.background = '#fee2e2'; document.getElementById('shopHint').innerText = 'Sun raha hoon... dukan ka naam bolo'; };
+      rec.onresult = function (ev) {
+        const text = ev.results[0][0].transcript.trim();
+        const inp = document.getElementById('shopName');
+        inp.value = text;
+        inp.dispatchEvent(new Event('input'));
+      };
+      rec.onerror = function (ev) {
+        document.getElementById('shopHint').innerText = ev.error === 'not-allowed' ? 'Mic ki permission do' : 'Awaaz samajh nahi aayi, dobara try karo';
+      };
+      rec.onend = function () { listening = false; btn.style.background = '#fff'; };
+      try { rec.start(); } catch (e) { listening = false; }
+    });
+  })();
+
   // 5. Camera & Auto Watermark Stamp (photo raw rakhi jaati hai, stamp latest naam/GPS se lagta hai)
   function renderDriverPhoto() {
     if (!rawCanvas) return;
@@ -411,19 +448,21 @@
     const ctx = canvas.getContext('2d');
     ctx.drawImage(rawCanvas, 0, 0);
 
-    const bannerHeight = 62;
+    const shop = document.getElementById('shopName').value.trim();
+    const bannerHeight = shop ? 62 : 40;
     ctx.fillStyle = "rgba(0, 0, 0, 0.68)";
     ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
 
     const dateStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     const visitLabel = document.getElementById("dailyVisitLabel").innerText;
-    const shop = document.getElementById('shopName').value.trim() || "Dukan ka naam";
 
     ctx.textAlign = "left";
+    if (shop) {
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 18px -apple-system, 'Noto Sans Devanagari', sans-serif";
+      ctx.fillText(shop.length > 48 ? shop.slice(0, 47) + "…" : shop, 14, canvas.height - 38);
+    }
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 18px -apple-system, sans-serif";
-    ctx.fillText(shop.length > 48 ? shop.slice(0, 47) + "…" : shop, 14, canvas.height - 38);
-
     ctx.font = "bold 14px -apple-system, sans-serif";
     ctx.fillText(`${visitLabel} | ${driverName || 'Driver'}`, 14, canvas.height - 14);
 
@@ -477,7 +516,6 @@
   async function submitCheckIn() {
     const shopName = document.getElementById('shopName').value.trim();
     if (!driverName) { alert("Driver name missing!"); return; }
-    if (!shopName) { alert("Dukan ka naam daalo."); return; }
     if (!currentLat || !currentLng) { alert("GPS location missing. Please enable location."); return; }
     if (!base64Photo) { alert("Please take a storefront photo."); return; }
 
@@ -527,7 +565,7 @@
       localStorage.setItem("satmola_visit_date", today);
       localStorage.setItem("satmola_visit_count", (currentCount + 1).toString());
 
-      alert(`✓ Check-in Submitted Successfully!\n${shopName}\n${visitLabel} recorded for ${driverName}`);
+      alert(`✓ Check-in Submitted Successfully!\n${shopName ? shopName + '\n' : ''}${visitLabel} recorded for ${driverName}`);
 
       // Reset state
       base64Photo = "";
