@@ -73,7 +73,7 @@ An existing BP's rep, city, group and block are only filled if they are blank. T
 
 ## 4. One-time setup (already done, for reference)
 
-For each sheet: **Extensions > Apps Script**, paste the matching script, **Deploy > New deployment > Web app**, *Execute as: Me*, *Who has access: Anyone*, then copy the `/exec` URL into the pages. Leave `SHEET_ID` empty in the scripts: they use the sheet they were created from. In the BP Master script also run `authorizeOnce`, `setupSheet` and `createOwnerKey` once. Keep both Google Sheets set to *Restricted* sharing.
+For each sheet: **Extensions > Apps Script**, paste the matching script, **Deploy > New deployment > Web app**, *Execute as: Me*, *Who has access: Anyone*, then copy the `/exec` URL into the pages.
 
 **After the first deployment of the BP Master script:** open the sheet, use the new **Satmola** menu and choose **Verify locations (Google Map)**. It checks up to 120 BPs per run, so run it about 5 times for ~600 BPs. The menu **Calibration Status refresh** recalculates the status column.
 
@@ -113,26 +113,7 @@ If you ever create a *new* deployment, the URL changes and must be updated in th
 ## 8. Known limits and notes
 
 - The pages send data with a "fire and forget" request, so the success message means the page sent it, not that the sheet confirmed it. Check the sheet after setting up.
-- The driver admin panel is unlocked with the Owner key (checked by the script), not a password stored in the page.
+- The driver admin password is written in the page code, so it is visible to anyone who views the source. Treat it as a light lock only.
 - The `Mobile` column holds the party's mobile. `S.e Mobile` is the sales executive's number and is not used for the party.
 - Driver pin is preferred over Sales pin when both agree. To reverse this, change the order in `decide_()` in the BP Master script and in the pin-selection list in the pages.
 - Google geocoding uses Apps Script's built-in Maps service, which has daily quotas. A Google Places API key would give a stricter "is this business registered" check, but needs billing.
-
----
-
-## 9. Security: only the owner can read the data
-
-The pages are public (GitHub Pages) but contain **no secret**. All data stays in the Google Sheets behind the Apps Scripts.
-
-| Who | What they can do |
-|---|---|
-| **Sales team / Drivers** | Only *send* data (location, photo, check-in). No code needed. They cannot read anything back. |
-| **Owner (you)** | `index.html` and `Location_sender.html` show a popup asking for the **Owner code**. Tick "Is device par save rakho" to remember it on that device; the Logout button forgets it. |
-
-- The Owner code is **not in any web page**. It is stored only in the BP Master script's *Script Properties*. Create it once by running `createOwnerKey` in the Apps Script editor (the code appears in the log), and keep it private.
-- Check the **Submission Log** tab and the Apps Script **Executions** page now and then for strange activity.
-- Wrong code: the script returns "Access denied" (and answers slowly, to stop guessing).
-- Photos are saved private in Drive; `Location_sender.html` fetches them through the script with the Owner code.
-- To change the code: run `createOwnerKey` again, then enter the new one in the popup.
-- After each script change: **Deploy > Manage deployments > pencil > New version > Deploy**. Archive old deployments, because they keep running old code.
-- Run `checkSecurity` and `makeAllPhotosPrivate` once in each script.
