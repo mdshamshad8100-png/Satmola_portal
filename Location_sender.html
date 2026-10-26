@@ -316,9 +316,72 @@
     };
 
     // Connected to the Master Web App deployment
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYA8xX6M3Ado6LbAaJNljdNFqty-za_bR8J_CsEknjrNA2J2btCF2v0RDcXIyLW53KnA/exec";
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfr0u2afdCCSPJQ61JgyLSTt4fk9SF9YjgXWTJDh2fNOZL2ITrIUbHT-YbNo2OrtuAcA/exec";
+
+// ---- Owner login: only you know the code. Enter it in the popup; if "Remember on this device" is ticked, the browser keeps it.
+//      The code is not on GitHub - it exists only in your Apps Script and in your head.
+var OWNER_LS = "satmola_owner";
+function getOwnerKey() { try { return localStorage.getItem(OWNER_LS) || sessionStorage.getItem(OWNER_LS) || ""; } catch (e) { return ""; } }
+function saveOwnerKey(k, remember) { try { localStorage.removeItem(OWNER_LS); sessionStorage.removeItem(OWNER_LS); (remember ? localStorage : sessionStorage).setItem(OWNER_LS, k); } catch (e) {} }
+function forgetOwnerKey() { try { localStorage.removeItem(OWNER_LS); sessionStorage.removeItem(OWNER_LS); } catch (e) {} }
+function pingOwner(k) {
+  return fetch(SCRIPT_URL + "?action=ping&key=" + encodeURIComponent(k)).then(function(r) { return r.json(); })
+    .then(function(j) { return !!(j && j.ok && j.role === "owner"); }).catch(function() { return null; });
+}
+function ownerPopup(msg, isErr) {
+  return new Promise(function(resolve) {
+    var ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(15,10,10,.78);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;font-family:system-ui,-apple-system,sans-serif";
+    ov.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.4)">' +
+      '<div style="font-size:18px;font-weight:800;color:#b8101f;margin-bottom:6px">🔒 Owner Login</div>' +
+      '<div id="opMsg" style="font-size:13px;margin-bottom:12px;color:' + (isErr ? "#b91c1c" : "#6b5b50") + '"></div>' +
+      '<input id="opKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Owner code" style="width:100%;box-sizing:border-box;padding:13px 14px;border:1.5px solid #d6c9b8;border-radius:12px;font-size:16px;outline:none">' +
+      '<label style="display:flex;gap:8px;align-items:center;margin:12px 0 14px;font-size:13px;color:#3b2f2f"><input id="opRem" type="checkbox" checked> Remember on this device</label>' +
+      '<div style="display:flex;gap:10px"><button id="opGo" style="flex:1;padding:13px;border:0;border-radius:12px;background:#d91f2f;color:#fff;font-weight:800;font-size:15px">Open</button>' +
+      '<button id="opNo" style="padding:13px 16px;border:1.5px solid #d6c9b8;border-radius:12px;background:#fff;color:#6b5b50;font-weight:700">Cancel</button></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector("#opMsg").textContent = msg;
+    var inp = ov.querySelector("#opKey");
+    setTimeout(function() { inp.focus(); }, 50);
+    function done(v) { document.body.removeChild(ov); resolve(v); }
+    ov.querySelector("#opGo").onclick = function() { done({ key: inp.value.trim(), remember: ov.querySelector("#opRem").checked }); };
+    ov.querySelector("#opNo").onclick = function() { done(null); };
+    inp.onkeydown = function(e) { if (e.key === "Enter") ov.querySelector("#opGo").click(); };
+  });
+}
+function addLogoutBtn() {
+  if (document.getElementById("opLogout")) return;
+  var b = document.createElement("button");
+  b.id = "opLogout"; b.textContent = "🔒 Logout";
+  b.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:9999;padding:6px 10px;border:1px solid #d6c9b8;border-radius:10px;background:#fff;color:#6b5b50;font-size:11px;font-weight:700;opacity:.85";
+  b.onclick = function() { forgetOwnerKey(); location.reload(); };
+  document.body.appendChild(b);
+}
+var _ownP = null;
+function ensureOwner() {
+  if (!_ownP) _ownP = _ensureOwner().then(function(v) { _ownP = null; return v; }, function(e) { _ownP = null; throw e; });
+  return _ownP;
+}
+async function _ensureOwner() {
+  var k = getOwnerKey();
+  if (k) {
+    var ok0 = await pingOwner(k);
+    if (ok0 !== false) { addLogoutBtn(); return k; }   // code is valid, or no internet (the saved code is kept)
+    forgetOwnerKey();
+  }
+  var msg = "This page is for the owner only. Enter your Owner Code.", err = false;
+  for (var i = 0; i < 5; i++) {
+    var r = await ownerPopup(msg, err);
+    if (!r || !r.key) return "";
+    var ok = await pingOwner(r.key);
+    if (ok) { saveOwnerKey(r.key, r.remember); addLogoutBtn(); return r.key; }
+    err = true;
+    msg = ok === null ? "No internet connection. Please check and try again." : "Wrong code. Please try again.";
+  }
+  return "";
+}
     var BPS = [];
-    var SHEET_REP = {};   // sheet ke 'S.e Mobile' se bana: sales rep -> number
+    var SHEET_REP = {};   // built from the sheet's 'S.e Mobile' column: sales rep -> number
     function ph10(v){var d=String(v||'').replace(/\D/g,'');if(d.length>10)d=d.slice(-10);return d.length===10?d:''}
     function S(v){return String(v==null?"":v).trim()}
     var curBp = null;
@@ -329,6 +392,22 @@
       t.textContent = m; 
       t.className = "toast on";
       setTimeout(function(){ t.className = "toast"; }, duration || 2400);
+    }
+
+    // Photos are private: fetched through the script with the owner code (no public link needed)
+    var _photoTok = 0;
+    function showPrivatePhoto(link) {
+      var img = $("dPhotoImg"), tok = ++_photoTok;
+      img.removeAttribute("src");
+      if (!link) return;
+      fetch(SCRIPT_URL + "?action=photo&url=" + encodeURIComponent(link) + "&key=" + encodeURIComponent(getOwnerKey()))
+        .then(function(r) { return r.json(); })
+        .then(function(j) {
+          if (tok !== _photoTok) return;
+          if (j && j.data) img.src = j.data;
+          else img.src = getDirectPhotoUrl(link);   // if it is an old public photo, show it directly
+        })
+        .catch(function() { if (tok === _photoTok) img.src = getDirectPhotoUrl(link); });
     }
 
     // Helper to extract Drive direct image preview link
@@ -353,12 +432,14 @@
     // Live Sync from Master Sheet
     function fetchLiveBps() {
       toast("Syncing live BP Master...", 2000);
-      fetch(SCRIPT_URL)
+      ensureOwner()
+        .then(function(key) { if (!key) { toast("Owner key required - refresh the page and enter it"); return Promise.reject("nokey"); } return fetch(SCRIPT_URL + "?key=" + encodeURIComponent(key)); })
         .then(function(res) { return res.json(); })
         .then(function(data) {
+          if (data && data.denied) { try { localStorage.removeItem("satmola_owner"); } catch (e) {} toast("Wrong owner key - refresh and enter it again"); return; }
           if (!Array.isArray(data) || data.length === 0) { toast("Sheet sync failed: " + (data && data.error ? data.error : "no data")); return; }
           BPS = data.map(function(r) {
-            // Pin chunne ka niyam: Final (Google Map se verified) -> Driver -> Sales -> purane naam
+            // Pin selection rule: Final (verified with Google Maps) -> Driver -> Sales -> old column names
             var lat = "", lng = "";
             var sets = [["Final Lat","Final Lng"],["Driver Lat","Driver Lng"],["Sales Lat","Sales Lng"],["Latitude","Longitude"],["Lat","Lng"]];
             for (var i = 0; i < sets.length; i++) {
@@ -397,7 +478,7 @@
           }).filter(function(b) { return b[0]; });
           toast("● " + BPS.length + " Parties Loaded Live", 2200);
         }).catch(function(err) {
-          console.error("Live fetch error:", err); toast("Sheet sync error - check internet / script URL");
+          if (err === "nokey") return; console.error("Live fetch error:", err); toast("Sheet sync error - check internet / script URL");
         });
     }
     window.addEventListener("DOMContentLoaded", fetchLiveBps);
@@ -444,7 +525,7 @@
       var rep = b[3] || "N/A";
       var repPhone = REP_PHONES[rep] || SHEET_REP[rep] || b[12] || "";
       var hasGps = !!(b[6] && b[7]);
-      var photoUrl = b[9] ? getDirectPhotoUrl(b[9]) : "";
+      var photoUrl = b[9] || "";
 
       curBp = {
         name: b[0],
@@ -467,14 +548,14 @@
 
       $("dName").textContent = curBp.name;
       $("dGroup").textContent = curBp.group;
-      $("dRep").textContent = curBp.rep;
+      $("dRep").textContent = curBp.rep + (curBp.repPhone ? " (" + curBp.repPhone + ")" : "");
       $("dCity").textContent = curBp.city;
       $("dBlock").textContent = curBp.block;
       $("repNameShort").textContent = curBp.rep;
       
       // Storefront Photo Preview
       if (curBp.photoUrl) {
-        $("dPhotoImg").src = curBp.photoUrl;
+        showPrivatePhoto(curBp.photoUrl);
         $("dPhotoCard").style.display = "block";
       } else {
         $("dPhotoCard").style.display = "none";
@@ -486,9 +567,9 @@
         if (curBp.conf === "High") {
           $("dLocTag").innerHTML = "<span class='tag gps'><i class='fa-solid fa-circle-check'></i> Verified Pin" + why + coords + "</span>";
         } else if (curBp.conf === "Low") {
-          $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-triangle-exclamation'></i> Pin check karo" + why + coords + "</span>";
+          $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-triangle-exclamation'></i> Check pin" + why + coords + "</span>";
         } else {
-          $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-circle-dot'></i> Pin (ek source)" + why + coords + "</span>";
+          $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-circle-dot'></i> Pin (single source)" + why + coords + "</span>";
         }
       } else {
         $("dLocTag").innerHTML = "<span class='tag approx'><i class='fa-solid fa-circle-dot'></i> Approximate Area Pin</span>";

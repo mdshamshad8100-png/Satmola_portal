@@ -671,7 +671,70 @@ $("shPdf").onclick=function(){if(!stops.length)return toast("Add stops first");t
 $("shPr").onclick=function(){if(!stops.length)return toast("Add stops first");setPage();if(SBX){toast("Print is blocked inside Claude, so the PDF is being saved. Open it and print.");$("shPdf").onclick();return}try{window.print()}catch(e){$("shPdf").onclick()}};
 loadSaved();stops=[];dir();all();
 
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYA8xX6M3Ado6LbAaJNljdNFqty-za_bR8J_CsEknjrNA2J2btCF2v0RDcXIyLW53KnA/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfr0u2afdCCSPJQ61JgyLSTt4fk9SF9YjgXWTJDh2fNOZL2ITrIUbHT-YbNo2OrtuAcA/exec";
+
+// ---- Owner login: only you know the code. Enter it in the popup; if "Remember on this device" is ticked, the browser keeps it.
+//      The code is not on GitHub - it exists only in your Apps Script and in your head.
+var OWNER_LS = "satmola_owner";
+function getOwnerKey() { try { return localStorage.getItem(OWNER_LS) || sessionStorage.getItem(OWNER_LS) || ""; } catch (e) { return ""; } }
+function saveOwnerKey(k, remember) { try { localStorage.removeItem(OWNER_LS); sessionStorage.removeItem(OWNER_LS); (remember ? localStorage : sessionStorage).setItem(OWNER_LS, k); } catch (e) {} }
+function forgetOwnerKey() { try { localStorage.removeItem(OWNER_LS); sessionStorage.removeItem(OWNER_LS); } catch (e) {} }
+function pingOwner(k) {
+  return fetch(SCRIPT_URL + "?action=ping&key=" + encodeURIComponent(k)).then(function(r) { return r.json(); })
+    .then(function(j) { return !!(j && j.ok && j.role === "owner"); }).catch(function() { return null; });
+}
+function ownerPopup(msg, isErr) {
+  return new Promise(function(resolve) {
+    var ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(15,10,10,.78);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;font-family:system-ui,-apple-system,sans-serif";
+    ov.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.4)">' +
+      '<div style="font-size:18px;font-weight:800;color:#b8101f;margin-bottom:6px">🔒 Owner Login</div>' +
+      '<div id="opMsg" style="font-size:13px;margin-bottom:12px;color:' + (isErr ? "#b91c1c" : "#6b5b50") + '"></div>' +
+      '<input id="opKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Owner code" style="width:100%;box-sizing:border-box;padding:13px 14px;border:1.5px solid #d6c9b8;border-radius:12px;font-size:16px;outline:none">' +
+      '<label style="display:flex;gap:8px;align-items:center;margin:12px 0 14px;font-size:13px;color:#3b2f2f"><input id="opRem" type="checkbox" checked> Remember on this device</label>' +
+      '<div style="display:flex;gap:10px"><button id="opGo" style="flex:1;padding:13px;border:0;border-radius:12px;background:#d91f2f;color:#fff;font-weight:800;font-size:15px">Open</button>' +
+      '<button id="opNo" style="padding:13px 16px;border:1.5px solid #d6c9b8;border-radius:12px;background:#fff;color:#6b5b50;font-weight:700">Cancel</button></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector("#opMsg").textContent = msg;
+    var inp = ov.querySelector("#opKey");
+    setTimeout(function() { inp.focus(); }, 50);
+    function done(v) { document.body.removeChild(ov); resolve(v); }
+    ov.querySelector("#opGo").onclick = function() { done({ key: inp.value.trim(), remember: ov.querySelector("#opRem").checked }); };
+    ov.querySelector("#opNo").onclick = function() { done(null); };
+    inp.onkeydown = function(e) { if (e.key === "Enter") ov.querySelector("#opGo").click(); };
+  });
+}
+function addLogoutBtn() {
+  if (document.getElementById("opLogout")) return;
+  var b = document.createElement("button");
+  b.id = "opLogout"; b.textContent = "🔒 Logout";
+  b.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:9999;padding:6px 10px;border:1px solid #d6c9b8;border-radius:10px;background:#fff;color:#6b5b50;font-size:11px;font-weight:700;opacity:.85";
+  b.onclick = function() { forgetOwnerKey(); location.reload(); };
+  document.body.appendChild(b);
+}
+var _ownP = null;
+function ensureOwner() {
+  if (!_ownP) _ownP = _ensureOwner().then(function(v) { _ownP = null; return v; }, function(e) { _ownP = null; throw e; });
+  return _ownP;
+}
+async function _ensureOwner() {
+  var k = getOwnerKey();
+  if (k) {
+    var ok0 = await pingOwner(k);
+    if (ok0 !== false) { addLogoutBtn(); return k; }   // code is valid, or no internet (the saved code is kept)
+    forgetOwnerKey();
+  }
+  var msg = "This page is for the owner only. Enter your Owner Code.", err = false;
+  for (var i = 0; i < 5; i++) {
+    var r = await ownerPopup(msg, err);
+    if (!r || !r.key) return "";
+    var ok = await pingOwner(r.key);
+    if (ok) { saveOwnerKey(r.key, r.remember); addLogoutBtn(); return r.key; }
+    err = true;
+    msg = ok === null ? "No internet connection. Please check and try again." : "Wrong code. Please try again.";
+  }
+  return "";
+}
 
 function parseCoordsFromUrl(url) {
   if (!url) return null;
@@ -682,7 +745,7 @@ function parseCoordsFromUrl(url) {
 }
 
 function S(v){return String(v==null?"":v).trim()}
-// ---- Pin chunne ka niyam: Final (Google Map se verified) -> Driver -> Sales -> purane column naam
+// ---- Pin selection rule: Final (verified with Google Maps) -> Driver -> Sales -> old column names
 function pinFromRow(r) {
   var sets = [["Final Lat","Final Lng"],["Driver Lat","Driver Lng"],["Sales Lat","Sales Lng"],["Latitude","Longitude"],["Lat","Lng"]];
   for (var i = 0; i < sets.length; i++) {
@@ -697,7 +760,7 @@ function pinFromRow(r) {
   return null;
 }
 
-// Aapne jo pin haath se set kiya (Set lat,lng / marker drag) wo yaad rakhta hai, refresh par nahi jata
+// Remembers any pin you set by hand (Set lat,lng / marker drag); it survives a refresh
 var OVR = {};
 try { OVR = JSON.parse(localStorage.getItem("satOvr") || "{}") || {}; } catch (e) { OVR = {}; }
 function rememberPin(name, lat, lng) {
@@ -706,20 +769,22 @@ function rememberPin(name, lat, lng) {
 }
 function pinTag(r) {
   if (r.conf === "Manual") return "● Aapka set kiya pin";
-  if (!(r.lat && r.lng)) return "○ Sirf area ka andaza";
+  if (!(r.lat && r.lng)) return "○ Area estimate only";
   if (r.conf === "High") return "✔ Verified pin";
-  if (r.conf === "Low") return "⚠ Pin check karo";
-  return "● Pin (ek source)";
+  if (r.conf === "Low") return "⚠ Check pin";
+  return "● Pin (single source)";
 }
 
 function fetchLiveMaster() {
   toast("Syncing live BP Master from Google Sheet...");
-  fetch(SCRIPT_URL)
+  ensureOwner()
+    .then(function(key) { if (!key) { toast("Owner key required - refresh the page and enter it"); return Promise.reject("nokey"); } return fetch(SCRIPT_URL + "?key=" + encodeURIComponent(key)); })
     .then(function(res) { return res.json(); })
     .then(function(data) {
+      if (data && data.denied) { try { localStorage.removeItem("satmola_owner"); } catch (e) {} toast("Wrong owner key - refresh and enter it again"); return; }
       if (!Array.isArray(data) || data.length === 0) { toast("Sheet sync failed: " + (data && data.error ? data.error : "no data")); return; }
 
-      // Refresh se pehle: route ke stops ka naam yaad rakho (index badal sakta hai)
+      // Before refreshing: remember the names of the route stops (the order can change)
       var old = rows, oldByName = {};
       old.forEach(function(r) { oldByName[r.name] = r; });
       var keepNames = stops.map(function(i) { return old[i] && old[i].name; });
@@ -758,7 +823,7 @@ function fetchLiveMaster() {
 
       var idx = {};
       fresh.forEach(function(r, i) { idx[r.name] = i; });
-      // Sirf local me jode gaye (abhi sheet me na pahunche) stops ko na gawao
+      // Do not lose stops that were only added locally (not yet in the sheet)
       keepNames.forEach(function(n) { if (n && idx[n] === undefined && oldByName[n]) { idx[n] = fresh.length; fresh.push(oldByName[n]); } });
 
       rows = fresh;
@@ -776,6 +841,7 @@ function fetchLiveMaster() {
       toast("● " + rows.length + " BPs loaded · " + ver + " verified pins");
     })
     .catch(function(err) {
+      if (err === "nokey") return;
       console.error("Live fetch error:", err); toast("Sheet sync error - check internet / script URL");
     });
 }

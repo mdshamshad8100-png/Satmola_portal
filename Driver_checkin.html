@@ -172,13 +172,14 @@
       <span id="gpsStatusText" class="status-text">Acquiring GPS location...</span>
     </div>
 
-    <!-- Step 0: Dukan ka naam (optional) - type karo ya bol kar likhwao -->
+    <!-- Step 0: Shop name (optional) - type it or use voice input -->
     <div style="margin-bottom:12px;">
       <label for="shopName" style="display:block;font-size:12px;font-weight:700;color:#64748b;margin-bottom:5px;">STORE NAME <span style="font-weight:600;color:#94a3b8;">(OPTIONAL)</span></label>
       <div style="display:flex;gap:8px;align-items:stretch;">
-        <input type="text" id="shopName" list="bpNames" placeholder="Type karo ya mic dabakar bolo" autocomplete="off"
+        <input type="text" id="shopName" list="bpNames" placeholder="Type it, or tap the mic and speak" autocomplete="off"
           style="flex:1;min-width:0;padding:13px 14px;border:1.5px solid #cbd5e1;border-radius:12px;font-size:15px;outline:none;background:#fff;box-sizing:border-box;">
-        <button type="button" id="micBtn" title="Bol kar naam likho" aria-label="Voice input"
+        <datalist id="bpNames"></datalist>
+        <button type="button" id="micBtn" title="Speak the name" aria-label="Voice input"
           style="flex:0 0 52px;border:1.5px solid #cbd5e1;border-radius:12px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="#dc2626"><path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-3.08A7 7 0 0019 11h-2z"/></svg>
         </button>
@@ -230,8 +231,8 @@
 
   // Target Checkin Sheet URL (for admin viewing)
   const CHECKIN_SHEET_URL = "https://docs.google.com/spreadsheets/d/1rgziIYFizsfA6haVZT43pQynLNiPont4LME3jwHePOc/edit";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyEK6Gg3DZ1dLlxshbfcBfx5SHjxcGz7PF0_ydLhE3PC5JVKPLuWZYS68jV_uWk5Mw/exec";
-  const BP_LIST_URL = "https://script.google.com/macros/s/AKfycbzYA8xX6M3Ado6LbAaJNljdNFqty-za_bR8J_CsEknjrNA2J2btCF2v0RDcXIyLW53KnA/exec";   // dukan ke naam ki list yahin se aati hai
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzVA4OeAFZe8qpq1zy8vrESrEc_Lq-Gi809tYr6afRYokX4qa8IvZE-puKW86IsjDo/exec";
+  const BP_LIST_URL = "https://script.google.com/macros/s/AKfycbwfr0u2afdCCSPJQ61JgyLSTt4fk9SF9YjgXWTJDh2fNOZL2ITrIUbHT-YbNo2OrtuAcA/exec";   // the list of shop names comes from here
 
   function istDate() { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); }
 
@@ -265,7 +266,7 @@
     document.getElementById("driverModal").style.display = "none";
   }
 
-  // 3. Admin Verification (Password: Ssg#0001)
+  // 3. Admin Verification (the Owner key is checked by the script; it is not written in the page)
   function openAdminModal() {
     document.getElementById("adminPinInput").value = "";
     document.getElementById("adminModal").style.display = "flex";
@@ -273,13 +274,21 @@
   function closeAdminModal() { document.getElementById("adminModal").style.display = "none"; }
   function closeAdminPanel() { document.getElementById("adminPanelModal").style.display = "none"; }
 
-  function verifyAdmin() {
-    if (document.getElementById("adminPinInput").value === "Ssg#0001") {
+  async function verifyAdmin() {
+    const v = document.getElementById("adminPinInput").value.trim();
+    if (!v) { alert("Enter the Owner key"); return; }
+    let ok = false;
+    try {
+      const r = await fetch(BP_LIST_URL + "?action=ping&key=" + encodeURIComponent(v));
+      const j = await r.json();
+      ok = !!(j && j.ok && j.role === "owner");
+    } catch (e) { alert("Please check your internet connection"); return; }
+    if (ok) {
       closeAdminModal();
       loadAdminDashboardData();
       document.getElementById("adminPanelModal").style.display = "flex";
     } else {
-      alert("Invalid password!");
+      alert("Invalid key!");
     }
   }
 
@@ -317,7 +326,7 @@
     document.getElementById("driverModal").style.display = "flex";
   }
 
-  // 4. Geolocation: kuch second me sabse accurate fix chunta hai (sirf ek reading nahi)
+  // 4. Geolocation: picks the most accurate fix over a few seconds (not just a single reading)
   let gpsWatch = null;
   function acquireFix(maxMs, goodAcc) {
     return new Promise((resolve) => {
@@ -335,7 +344,7 @@
         (pos) => {
           if (done) return;
           if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
-          document.getElementById('gpsStatusText').innerText = `Location le raha hai... ±${Math.round(best.coords.accuracy)}m`;
+          document.getElementById('gpsStatusText').innerText = `Getting location... ±${Math.round(best.coords.accuracy)}m`;
           if (best.coords.accuracy <= goodAcc) end();
         },
         () => end(),
@@ -360,12 +369,12 @@
     const pos = await acquireFix(18000, 15);
     if (!pos) {
       card.className = "status-card error";
-      text.innerText = "GPS nahi mila - phone ka GPS ON karo, phir yahan tap karo";
+      text.innerText = "GPS not found - turn ON your phone GPS, then tap here";
     } else {
       const acc = Math.round(pos.coords.accuracy);
       if (acc > 100) {
         card.className = "status-card error";
-        text.innerText = `GPS kamzor (±${acc}m) - khule me jaakar yahan tap karo`;
+        text.innerText = `Weak GPS (±${acc}m) - move to an open area and tap here`;
       } else {
         currentLat = pos.coords.latitude.toFixed(6);
         currentLng = pos.coords.longitude.toFixed(6);
@@ -384,7 +393,7 @@
     document.getElementById('submitBtn').disabled = !(base64Photo && currentLat && currentLng);
   }
 
-  // Dukan ke naam ki list (BP Master se). Net na ho to pichli saved list chalegi
+  // Shop name list (from BP Master). If offline, the last saved list is used
   function fillShopList(names) {
     const dl = document.getElementById('bpNames');
     dl.innerHTML = names.map(n => `<option value="${String(n).replace(/"/g, '&quot;')}"></option>`).join("");
@@ -392,7 +401,7 @@
   }
   (function loadShopNames() {
     try { fillShopList(JSON.parse(localStorage.getItem("satmola_bp_names") || "[]")); } catch (e) {}
-    fetch(BP_LIST_URL).then(r => r.json()).then(data => {
+    fetch(BP_LIST_URL + "?action=names").then(r => r.json()).then(data => {
       if (!Array.isArray(data)) return;
       const names = Array.from(new Set(data.map(r => r["BP Name"]).filter(Boolean)));
       if (names.length) {
@@ -406,13 +415,13 @@
     const hint = document.getElementById('shopHint');
     const list = window.__bpNames || [];
     if (!v || !list.length) hint.innerText = "";
-    else if (list.some(n => String(n).trim().toLowerCase() === v)) { hint.style.color = "#16a34a"; hint.innerText = "✓ Dukan list me mili"; }
-    else { hint.style.color = "#d97706"; hint.innerText = "Ye naam list me nahi mila - sahi spelling ho to aise hi aage badho"; }
+    else if (list.some(n => String(n).trim().toLowerCase() === v)) { hint.style.color = "#16a34a"; hint.innerText = "✓ Shop found in the list"; }
+    else { hint.style.color = "#d97706"; hint.innerText = "This name is not in the list - if the spelling is right, just continue"; }
     updateSubmit();
     renderDriverPhoto();
   });
 
-  // Voice se naam likhna (Chrome / Android). Support na ho to mic chhup jata hai
+  // Voice input for the name (Chrome / Android). The mic is hidden if unsupported
   (function setupVoice() {
     const btn = document.getElementById('micBtn');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -424,7 +433,7 @@
       rec.lang = document.getElementById('voiceLang').value;
       rec.interimResults = false;
       rec.maxAlternatives = 1;
-      rec.onstart = function () { listening = true; btn.style.background = '#fee2e2'; document.getElementById('shopHint').innerText = 'Sun raha hoon... dukan ka naam bolo'; };
+      rec.onstart = function () { listening = true; btn.style.background = '#fee2e2'; document.getElementById('shopHint').innerText = 'Listening... say the shop name'; };
       rec.onresult = function (ev) {
         const text = ev.results[0][0].transcript.trim();
         const inp = document.getElementById('shopName');
@@ -432,14 +441,14 @@
         inp.dispatchEvent(new Event('input'));
       };
       rec.onerror = function (ev) {
-        document.getElementById('shopHint').innerText = ev.error === 'not-allowed' ? 'Mic ki permission do' : 'Awaaz samajh nahi aayi, dobara try karo';
+        document.getElementById('shopHint').innerText = ev.error === 'not-allowed' ? 'Please allow microphone access' : 'Could not understand, please try again';
       };
       rec.onend = function () { listening = false; btn.style.background = '#fff'; };
       try { rec.start(); } catch (e) { listening = false; }
     });
   })();
 
-  // 5. Camera & Auto Watermark Stamp (photo raw rakhi jaati hai, stamp latest naam/GPS se lagta hai)
+  // 5. Camera & Auto Watermark Stamp (the photo is kept raw; the stamp uses the latest name/GPS)
   function renderDriverPhoto() {
     if (!rawCanvas) return;
     const canvas = document.createElement('canvas');
@@ -495,7 +504,7 @@
         document.getElementById('reviewContainer').style.display = 'flex';
         renderDriverPhoto();
 
-        // Location photo lete waqt ki hi leni hai (page kholte waqt ki nahi)
+        // Take the location at the moment of the photo (not when the page was opened)
         document.getElementById('submitBtn').disabled = true;
         fetchLocation().then(renderDriverPhoto);
       };
@@ -523,7 +532,7 @@
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
 
-    renderDriverPhoto();   // latest naam / visit number ke saath photo final
+    renderDriverPhoto();   // final photo with the latest name / visit number
     const visitLabel = document.getElementById("dailyVisitLabel").innerText;
     const visitNo = parseInt(visitLabel.replace(/\D/g, ""), 10) || "";
     const timeNow = new Date().toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' });

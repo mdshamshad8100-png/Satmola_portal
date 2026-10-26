@@ -184,17 +184,20 @@
     /* Side-by-Side Dual Action Grid (50-50 Split) */
     .action-btn-group {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 10px;
       width: 100%;
       margin-top: 10px;
     }
 
     .btn-action {
-      padding: 13px 8px;
+      width: 100%;
+      min-height: 43px;
+      box-sizing: border-box;
+      padding: 10px 14px;
       border-radius: 14px;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 14px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -523,18 +526,8 @@
       <input type="text" id="city" placeholder="e.g. Chandni Chowk, Central Delhi" required>
     </div>
 
-    <!-- 5. Mobile Number (Optional) -->
-    <div class="form-group">
-      <label for="mobile">Mobile Number (Optional)</label>
-      <input type="tel" id="mobile" placeholder="e.g. +91 98991 XXXXX">
-    </div>
-
-    <!-- 6. Side-by-Side: GPS & Click Photo Buttons (50-50 Split) -->
+    <!-- 5. Click Photo (full width) -->
     <div class="action-btn-group">
-      <button type="button" class="btn-action btn-gps" id="btnGps">
-        <i class="fa-solid fa-location-crosshairs"></i> Acquire GPS
-      </button>
-
       <label class="btn-action btn-camera" for="salesPhotoInput">
         <i class="fa-solid fa-camera"></i> Click Photo
         <input type="file" id="salesPhotoInput" accept="image/*" capture="environment" style="display:none;" onchange="handleSalesPhoto(event)">
@@ -548,6 +541,13 @@
         <span><i class="fa-solid fa-circle-check"></i> Photo & Watermark Linked</span>
         <button type="button" class="btn-retake-photo" onclick="retakeSalesPhoto()">Retake</button>
       </div>
+    </div>
+
+    <!-- 6. Acquire GPS (full width, below the photo) -->
+    <div class="action-btn-group">
+      <button type="button" class="btn-action btn-gps" id="btnGps">
+        <i class="fa-solid fa-location-crosshairs"></i> Acquire GPS
+      </button>
     </div>
 
     <!-- GPS Feedback Box -->
@@ -579,13 +579,14 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYA8xX6M3Ado6LbAaJNljdNFqty-za_bR8J_CsEknjrNA2J2btCF2v0RDcXIyLW53KnA/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfr0u2afdCCSPJQ61JgyLSTt4fk9SF9YjgXWTJDh2fNOZL2ITrIUbHT-YbNo2OrtuAcA/exec";
 
     // Application State
+
     let curLoc = null;
     let cachedBpList = [];
     let salesBase64Photo = "";
-    let salesRaw = null;     // bina watermark ki photo (watermark baad me latest naam/GPS ke saath lagta hai)
+    let salesRaw = null;     // photo without watermark (the watermark is added later with the latest name/GPS)
     let gpsWatchId = null;
 
     const $ = id => document.getElementById(id);
@@ -624,10 +625,16 @@
       badge.className = "sync-badge syncing";
       badge.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Syncing BPs...`;
 
-      fetch(SCRIPT_URL)
+      Promise.resolve()
+        .then(() => fetch(SCRIPT_URL + "?action=names"))
         .then(res => res.json())
         .then(data => {
           var list = [];
+          if (data && data.denied) {
+            badge.className = "sync-badge ready";
+            badge.innerHTML = `✓ Ready`;
+            return;
+          }
           if (data && data.error) {
             badge.className = "sync-badge";
             badge.innerHTML = `⚠ Sheet error: ${data.error}`;
@@ -663,7 +670,29 @@
         });
     }
 
-    function handleBpNameInput(val) {
+    // Name suggestions: the script returns at most 8 matching names (never the full list)
+    let _sugT = null, _sugQ = "";
+    function suggestBps(val) {
+      const q = (val || "").trim();
+      clearTimeout(_sugT);
+      if (q.length < 3 || q === _sugQ) return;
+      _sugT = setTimeout(() => {
+        _sugQ = q;
+        fetch(SCRIPT_URL + "?action=suggest&q=" + encodeURIComponent(q))
+          .then(r => r.json())
+          .then(data => {
+            if (!Array.isArray(data)) return;
+            cachedBpList = data.map(r => r["BP Name"]).filter(Boolean);
+            const datalist = $("bpListOptions");
+            datalist.innerHTML = "";
+            cachedBpList.forEach(bp => { const opt = document.createElement("option"); opt.value = bp; datalist.appendChild(opt); });
+            handleBpNameInput($("bpName").value, true);
+          }).catch(() => {});
+      }, 350);
+    }
+
+    function handleBpNameInput(val, fromSuggest) {
+      if (!fromSuggest) suggestBps(val);
       const trimmed = (val || "").trim().toLowerCase();
       const notice = $("matchNotice");
       if (!trimmed) {
@@ -671,6 +700,12 @@
         return;
       }
 
+      if (!cachedBpList.length) {
+        notice.style.display = "block";
+        notice.style.color = "var(--tx-muted)";
+        notice.innerHTML = `<i class="fa-solid fa-circle-info"></i> If this BP is already in the sheet its location will be updated; otherwise a new BP will be added.`;
+        return;
+      }
       const matchFound = cachedBpList.some(item => item.toLowerCase() === trimmed);
       if (matchFound) {
         notice.style.display = "block";
@@ -683,7 +718,7 @@
       }
     }
 
-    // 2. Core GPS Function - kuch second tak sabse accurate location dhoondhta hai
+    // 2. Core GPS function - searches for the most accurate location for a few seconds
     function fetchGPSCoordinates(callback) {
       if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser.");
@@ -700,7 +735,7 @@
       box.innerHTML = `
         <div style="display:flex; align-items:center; gap:8px;">
           <i class="fa-solid fa-spinner fa-spin"></i>
-          <span id="gpsLive">Sabse accurate location dhoondh raha hoon... dukan ke paas khule me khade rahein.</span>
+          <span id="gpsLive">Finding the most accurate location... please stand in the open near the shop.</span>
         </div>
       `;
 
@@ -715,7 +750,7 @@
         stopWatch();
         if (!best) {
           box.className = "gps-box err";
-          box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <b>GPS nahi mila.</b> Location/GPS ON karke dobara 'Acquire GPS' dabayein.`;
+          box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <b>GPS not found.</b> Turn ON Location/GPS and tap 'Acquire GPS' again.`;
           return;
         }
         const lat = best.coords.latitude.toFixed(6);
@@ -724,9 +759,9 @@
         const liveMapHyperlink = generateMapsUrl(lat, lng);
 
         if (acc > 100) {
-          // Bahut kamzor fix sheet me jaakar sahi pin ko kharab na kare
+          // A very weak fix must not overwrite a good pin in the sheet
           box.className = "gps-box err";
-          box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <b>GPS kamzor hai (±${acc}m).</b> Khule aasman ke neeche jaakar 'Acquire GPS' dobara dabayein, ya Maps link manually daalein.`;
+          box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <b>Weak GPS (±${acc}m).</b> Move to an open area and tap 'Acquire GPS' again, or enter the Maps link manually.`;
           checkReady();
           return;
         }
@@ -736,7 +771,7 @@
         box.className = "gps-box ok";
         box.innerHTML = `
           <div>
-            <b style="color:${good ? "var(--green-ok)" : "#b46d00"};"><i class="fa-solid ${good ? "fa-circle-check" : "fa-circle-exclamation"}"></i> ${good ? "Live GPS Verified" : "GPS theek-thaak (aur behtar ho sakta hai)"}</b>
+            <b style="color:${good ? "var(--green-ok)" : "#b46d00"};"><i class="fa-solid ${good ? "fa-circle-check" : "fa-circle-exclamation"}"></i> ${good ? "Live GPS Verified" : "GPS acceptable (could be better)"}</b>
             <span style="font-size:11px; margin-left:4px;">(Accuracy: ±${acc}m)</span>
           </div>
           <div class="coords-preview">
@@ -759,7 +794,7 @@
           if (finished) return;
           if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
           const el = $("gpsLive");
-          if (el) el.textContent = "Accuracy abhi ±" + Math.round(best.coords.accuracy) + "m... behtar fix ka intezaar";
+          if (el) el.textContent = "Accuracy now ±" + Math.round(best.coords.accuracy) + "m... waiting for a better fix";
           if (best.coords.accuracy <= 15) finish();
         },
         function(err) {
@@ -784,7 +819,7 @@
       fetchGPSCoordinates();
     };
 
-    // 3. Click Photo: photo raw rakhta hai, watermark (dukan ka naam + GPS) latest values se lagta hai
+    // 3. Click Photo: keeps the photo raw; the watermark (shop name + GPS) uses the latest values
     function renderSalesPhoto() {
       if (!salesRaw) return;
       const canvas = document.createElement('canvas');
@@ -833,7 +868,7 @@
           salesRaw = raw;
           renderSalesPhoto();
 
-          // Photo lete hi GPS coordinates auto-fetch (fix milte hi watermark dobara banta hai)
+          // Fetch GPS coordinates automatically when the photo is taken (the watermark is redrawn once a fix arrives)
           fetchGPSCoordinates();
         };
         img.src = evt.target.result;
@@ -954,7 +989,6 @@
       const bpGroup = $("bpGroup").value;
       const bpName = $("bpName").value.trim();
       const city = $("city").value.trim();
-      const mobile = $("mobile").value.trim();
 
       if (!rep) return showToast("Please select Sales Employee", "error");
       if (!bpGroup) return showToast("Please select Group", "error");
@@ -966,7 +1000,7 @@
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Saving to Google Sheet...`;
 
-      renderSalesPhoto();   // naam/rep baad me badle ho to bhi photo par sahi chhape
+      renderSalesPhoto();   // so the photo shows the right name/rep even if they were changed later
       const finalMapUrl = curLoc.mapUrl || generateMapsUrl(curLoc.lat, curLoc.lng) || "";
 
       const payload = {
@@ -974,7 +1008,6 @@
         group: bpGroup,
         bpName: bpName,
         city: city,
-        mobile: mobile,
         lat: curLoc.lat || "",
         lng: curLoc.lng || "",
         accuracy: curLoc.accuracy || 0,
@@ -990,7 +1023,9 @@
       })
       .then(() => {
         const wasExisting = cachedBpList.some(item => item.toLowerCase() === bpName.toLowerCase());
-        if (wasExisting) {
+        if (!cachedBpList.length) {
+          showToast(`✓ Location & photo sent!`, "success");
+        } else if (wasExisting) {
           showToast(`✓ Updated coordinates & photo in existing BP row!`, "success");
         } else {
           showToast(`✓ New BP, location & photo appended to Sheet!`, "success");
@@ -1002,7 +1037,6 @@
           $("bpName").value = "";
           $("bpGroup").value = "";
           $("city").value = "";
-          $("mobile").value = "";
           $("waInput").value = "";
           $("matchNotice").style.display = "none";
           $("gpsBox").style.display = "none";
