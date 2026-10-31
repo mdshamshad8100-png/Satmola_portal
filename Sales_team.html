@@ -451,6 +451,23 @@
 
     /* Fast custom BP search dropdown (light theme, replaces the dark browser list) */
     .bp-wrap { position: relative; }
+    #bpName { padding-right: 44px; }
+    .bp-clear {
+      display: none;
+      position: absolute;
+      right: 6px; top: 50%;
+      transform: translateY(-50%);
+      width: 32px; height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: #f1ede6;
+      color: var(--tx-muted);
+      font-size: 14px;
+      line-height: 32px;
+      padding: 0;
+      cursor: pointer;
+    }
+    .bp-clear:active { background: #e6ddd0; }
     .bp-dd {
       display: none;
       position: absolute;
@@ -462,6 +479,8 @@
       box-shadow: 0 10px 25px -6px rgba(0,0,0,0.18);
       max-height: 280px;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
     }
     .bp-dd.on { display: block; }
@@ -474,7 +493,7 @@
       color: var(--tx-main);
     }
     .bp-item:last-child { border-bottom: none; }
-    .bp-item:active { background: var(--gd-light); }
+    .bp-item:active, .bp-item.act { background: var(--gd-light); }
     .bp-item small {
       display: block;
       font-size: 11px;
@@ -559,6 +578,7 @@
           oninput="handleBpNameInput(this.value)"
           onfocus="handleBpFocus()"
         >
+        <button type="button" class="bp-clear" id="bpClear" tabindex="-1" aria-label="Clear BP name" onclick="clearBp()">&#10005;</button>
         <div class="bp-dd" id="bpDd"></div>
       </div>
       <datalist id="bpListOptions"></datalist>
@@ -768,17 +788,44 @@
           s.textContent = meta;
           item.appendChild(s);
         }
-        item.onpointerdown = function(e) { e.preventDefault(); pickBp(r); };
+        // Select only on a real tap (click), so scrolling the list with a finger never picks an item
+        item.onclick = function(e) { e.preventDefault(); pickBp(r); };
         dd.appendChild(item);
       });
-      if (!list.length) {
-        const note = document.createElement("div");
-        note.className = "bp-note";
-        note.textContent = loading ? "Searching..." : "No match - this will be added as a NEW BP (fill details manually)";
-        dd.appendChild(note);
-      }
-      dd.className = "bp-dd on";
+      _ddIdx = -1;
+      // No match: show nothing at all (the person simply continues typing a new BP name)
+      dd.className = list.length ? "bp-dd on" : "bp-dd";
     }
+
+    // Keyboard support: Arrow keys move, Enter / Tab accept the highlighted item, Esc closes
+    let _ddIdx = -1;
+    function setActive(i) {
+      const items = $("bpDd").querySelectorAll(".bp-item");
+      items.forEach((el, n) => el.classList.toggle("act", n === i));
+      _ddIdx = i;
+      if (items[i]) items[i].scrollIntoView({ block: "nearest" });
+    }
+    $("bpName").addEventListener("keydown", function(e) {
+      const dd = $("bpDd");
+      const items = dd.querySelectorAll(".bp-item");
+      const open = dd.classList.contains("on") && items.length > 0;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        if (!open) { if (e.key === "ArrowDown") suggestBps(this.value); return; }
+        e.preventDefault();
+        const next = e.key === "ArrowDown" ? (_ddIdx + 1) % items.length : (_ddIdx <= 0 ? items.length - 1 : _ddIdx - 1);
+        setActive(next);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (open && _ddIdx >= 0) { items[_ddIdx].click(); }
+        else { hideDd(); $("city").focus(); }
+      } else if (e.key === "Tab") {
+        // Accept only an item the user highlighted with the arrow keys; focus then moves on normally
+        if (open && _ddIdx >= 0) items[_ddIdx].click();
+        else hideDd();
+      } else if (e.key === "Escape") {
+        hideDd();
+      }
+    });
 
     // Fill City and Group from an existing BP record
     function applyAutofill(r) {
@@ -806,6 +853,15 @@
       applyAutofill(r);
       handleBpNameInput($("bpName").value, true);
       if (salesRaw) renderSalesPhoto();
+    }
+
+    // Clear (X) button: empties the BP name, removes auto-filled values and reopens typing
+    function clearBp() {
+      $("bpName").value = "";
+      handleBpNameInput("", true);
+      hideDd();
+      if (salesRaw) renderSalesPhoto();
+      $("bpName").focus();
     }
 
     function handleBpFocus() {
@@ -871,6 +927,7 @@
       if (!fromSuggest) suggestBps(val);
       const trimmed = (val || "").trim().toLowerCase();
       const notice = $("matchNotice");
+      $("bpClear").style.display = (val || "").length ? "block" : "none";
 
       // Name changed: clear the values that were auto-filled for the previous BP (new BP = manual entry)
       if (_auto && _auto.name !== trimmed) {
@@ -1225,6 +1282,7 @@
           $("city").value = "";
           _auto = null;
           hideDd();
+          $("bpClear").style.display = "none";
           $("waInput").value = "";
           $("matchNotice").style.display = "none";
           $("gpsBox").style.display = "none";
