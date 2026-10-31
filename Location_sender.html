@@ -6,6 +6,7 @@
   <title>Satmola Logistics - Party Lookup & Dispatch</title>
   
   <!-- High Quality Satmola App Icon (Mobile Home Screen Shortcut) -->
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#d91f2f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -578,30 +579,33 @@ async function _ensureOwner() {
       $("detCard").style.display = "block";
     };
 
-    // 1-Click Instant Porter Launch with Exact Drop Coordinates (Photo NOT passed)
+    // Register service worker so Chrome offers "Install app" (works on phone and PC)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+
+    // Porter launch with exact drop coordinates via Android app chooser (Photo NOT passed)
     $("btnPorter").onclick = function() {
       if (!curBp) return toast("Please select a Business Partner first!");
 
-      toast("Opening Porter...", 1500);
-
-      var dropQuery = curBp.hasGps 
-        ? (curBp.lat + "," + curBp.lng) 
-        : encodeURIComponent(curBp.name + ", " + curBp.block + ", " + curBp.city);
-
+      // Porter has no public "book?drop=" link, so we use the same standard
+      // Android location intent (geo:) that opens from a shared map pin.
+      // Android then shows the app chooser (Porter / Google Maps), exactly
+      // like tapping a location link received on WhatsApp.
       var isAndroid = /android/i.test(navigator.userAgent);
-      var porterWeb = "https://porter.in/book?drop=" + dropQuery;
-      var porterAppUrl = "intent://porter.in/book?drop=" + dropQuery + "#Intent;scheme=https;package=com.theporter.android.customerapp;end";
+      var mapUrl = getMapUrl(curBp);
 
-      if (isAndroid) {
-        window.location.href = porterAppUrl;
-        setTimeout(function() {
-          window.location.href = porterWeb;
-        }, 1200);
+      if (isAndroid && curBp.hasGps) {
+        toast("Select Porter from the list", 2500);
+        var label = encodeURIComponent(curBp.name);
+        window.location.href = "geo:" + curBp.lat + "," + curBp.lng +
+                               "?q=" + curBp.lat + "," + curBp.lng + "(" + label + ")";
       } else {
-        window.location.href = "porter://book?drop=" + dropQuery;
-        setTimeout(function() {
-          window.location.href = porterWeb;
-        }, 1200);
+        // No exact pin or not Android: open the map link (user can pick Porter from there)
+        toast("Opening map link...", 1500);
+        window.location.href = mapUrl;
       }
     };
 
