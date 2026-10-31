@@ -449,6 +449,46 @@
     .toast.info { border-left: 4px solid var(--gd-amber); }
     .toast.error { border-left: 4px solid var(--rd-main); }
 
+    /* Fast custom BP search dropdown (light theme, replaces the dark browser list) */
+    .bp-wrap { position: relative; }
+    .bp-dd {
+      display: none;
+      position: absolute;
+      left: 0; right: 0; top: calc(100% + 4px);
+      z-index: 50;
+      background: #ffffff;
+      border: 1.5px solid var(--border-line);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -6px rgba(0,0,0,0.18);
+      max-height: 280px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bp-dd.on { display: block; }
+    .bp-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f4ece1;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--tx-main);
+    }
+    .bp-item:last-child { border-bottom: none; }
+    .bp-item:active { background: var(--gd-light); }
+    .bp-item small {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--tx-muted);
+      margin-top: 2px;
+    }
+    .bp-note {
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--tx-muted);
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
@@ -507,15 +547,20 @@
           <i class="fa-solid fa-arrows-rotate fa-spin"></i> Syncing BPs...
         </span>
       </div>
-      <input 
-        list="bpListOptions" 
-        type="text" 
-        id="bpName" 
-        placeholder="Type to search or enter new BP..." 
-        required 
-        autocomplete="off"
-        oninput="handleBpNameInput(this.value)"
-      >
+      <div class="bp-wrap" id="bpWrap">
+        <input
+          type="text"
+          id="bpName"
+          placeholder="Type to search or enter new BP..."
+          required
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          oninput="handleBpNameInput(this.value)"
+          onfocus="handleBpFocus()"
+        >
+        <div class="bp-dd" id="bpDd"></div>
+      </div>
       <datalist id="bpListOptions"></datalist>
       <div id="matchNotice" style="display:none; font-size:11px; margin-top:4px; font-weight:600;"></div>
     </div>
@@ -671,30 +716,171 @@
     }
 
     // Name suggestions: the script returns at most 8 matching names (never the full list)
-    let _sugT = null, _sugQ = "";
+    // Fast search: instant matches from names already seen + a quick background lookup.
+    // Old requests are cancelled, results are cached, and the list is a light custom dropdown.
+    let _sugT = null, _sugCtl = null;
+    const _sugCache = {};          // query -> server records
+    let bpKnown = {};              // lowercase name -> full record
+    let _auto = null;              // last autofilled values {name, city, group}
+
+    // Read a field from a record by (part of) its column name, e.g. "city" / "group"
+    function recField(r, words) {
+      for (const k in r) {
+        const kl = k.toLowerCase();
+        if (words.some(w => kl.indexOf(w) > -1) && r[k] !== "" && r[k] != null) return String(r[k]).trim();
+      }
+      return "";
+    }
+
+    function rememberRecords(arr) {
+      arr.forEach(r => {
+        const n = r && r["BP Name"];
+        if (n) bpKnown[String(n).trim().toLowerCase()] = r;
+      });
+      cachedBpList = Object.keys(bpKnown).map(k => String(bpKnown[k]["BP Name"]).trim());
+    }
+
+    function localMatches(q) {
+      const ql = q.toLowerCase();
+      const starts = [], inside = [];
+      for (const k in bpKnown) {
+        const i = k.indexOf(ql);
+        if (i === 0) starts.push(bpKnown[k]);
+        else if (i > 0) inside.push(bpKnown[k]);
+      }
+      return starts.concat(inside).slice(0, 8);
+    }
+
+    function hideDd() { $("bpDd").className = "bp-dd"; }
+
+    function renderDd(list, q, loading) {
+      const dd = $("bpDd");
+      dd.innerHTML = "";
+      list.forEach(r => {
+        const item = document.createElement("div");
+        item.className = "bp-item";
+        item.textContent = r["BP Name"];
+        const city = recField(r, ["city", "area"]);
+        const grp = recField(r, ["group"]);
+        const meta = [city, grp].filter(Boolean).join(" · ");
+        if (meta) {
+          const s = document.createElement("small");
+          s.textContent = meta;
+          item.appendChild(s);
+        }
+        item.onpointerdown = function(e) { e.preventDefault(); pickBp(r); };
+        dd.appendChild(item);
+      });
+      if (!list.length) {
+        const note = document.createElement("div");
+        note.className = "bp-note";
+        note.textContent = loading ? "Searching..." : "No match - this will be added as a NEW BP (fill details manually)";
+        dd.appendChild(note);
+      }
+      dd.className = "bp-dd on";
+    }
+
+    // Fill City and Group from an existing BP record
+    function applyAutofill(r) {
+      const city = recField(r, ["city", "area"]);
+      const grp = recField(r, ["group"]);
+      let filledCity = "", filledGroup = "";
+      if (city) { $("city").value = city; filledCity = city; }
+      if (grp) {
+        const opts = $("bpGroup").options;
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value.toLowerCase() === grp.toLowerCase() || opts[i].text.toLowerCase() === grp.toLowerCase()) {
+            $("bpGroup").value = opts[i].value;
+            filledGroup = opts[i].value;
+            break;
+          }
+        }
+      }
+      _auto = { name: String(r["BP Name"]).trim().toLowerCase(), city: filledCity, group: filledGroup };
+      if (filledCity || filledGroup) showToast("Details auto-filled", "success");
+    }
+
+    function pickBp(r) {
+      $("bpName").value = r["BP Name"];
+      hideDd();
+      applyAutofill(r);
+      handleBpNameInput($("bpName").value, true);
+      if (salesRaw) renderSalesPhoto();
+    }
+
+    function handleBpFocus() {
+      const q = ($("bpName").value || "").trim();
+      if (q.length >= 1) suggestBps(q);
+    }
+
     function suggestBps(val) {
       const q = (val || "").trim();
       clearTimeout(_sugT);
-      if (q.length < 3 || q === _sugQ) return;
+      if (!q) { hideDd(); return; }
+
+      const key = q.toLowerCase();
+      const local = localMatches(q);
+      let cached = _sugCache[key];
+      // If a shorter search already returned its COMPLETE list (fewer than 8), longer text can be filtered here with no server call
+      if (!cached) {
+        for (const k in _sugCache) {
+          if (key.indexOf(k) === 0 && _sugCache[k].length < 8) {
+            cached = _sugCache[k].filter(r => String(r["BP Name"]).toLowerCase().indexOf(key) > -1);
+            break;
+          }
+        }
+      }
+      renderDd(cached ? mergeResults(cached, local) : local, q, q.length >= 2 && !cached);
+      if (q.length < 2 || cached) return;
+
       _sugT = setTimeout(() => {
-        _sugQ = q;
-        fetch(SCRIPT_URL + "?action=suggest&q=" + encodeURIComponent(q))
+        if (_sugCtl) _sugCtl.abort();
+        _sugCtl = new AbortController();
+        fetch(SCRIPT_URL + "?action=suggest&q=" + encodeURIComponent(q), { signal: _sugCtl.signal })
           .then(r => r.json())
           .then(data => {
-            if (!Array.isArray(data)) return;
-            cachedBpList = data.map(r => r["BP Name"]).filter(Boolean);
-            const datalist = $("bpListOptions");
-            datalist.innerHTML = "";
-            cachedBpList.forEach(bp => { const opt = document.createElement("option"); opt.value = bp; datalist.appendChild(opt); });
+            if (!Array.isArray(data)) { renderDd(localMatches(q), q, false); return; }
+            _sugCache[key] = data;
+            rememberRecords(data);
+            if (($("bpName").value || "").trim().toLowerCase() !== key) return;   // user kept typing
+            renderDd(mergeResults(data, localMatches(q)), q, false);
             handleBpNameInput($("bpName").value, true);
           }).catch(() => {});
-      }, 350);
+      }, 120);
     }
+
+    function mergeResults(serverList, localList) {
+      const seen = {}, out = [];
+      serverList.concat(localList).forEach(r => {
+        const n = r && r["BP Name"];
+        if (!n) return;
+        const k = String(n).trim().toLowerCase();
+        if (seen[k]) return;
+        seen[k] = 1;
+        out.push(bpKnown[k] || r);
+      });
+      return out.slice(0, 8);
+    }
+
+    // Close the list when tapping anywhere else
+    document.addEventListener("pointerdown", function(e) {
+      if (!e.target.closest("#bpWrap")) hideDd();
+    });
 
     function handleBpNameInput(val, fromSuggest) {
       if (!fromSuggest) suggestBps(val);
       const trimmed = (val || "").trim().toLowerCase();
       const notice = $("matchNotice");
+
+      // Name changed: clear the values that were auto-filled for the previous BP (new BP = manual entry)
+      if (_auto && _auto.name !== trimmed) {
+        if (_auto.city && $("city").value === _auto.city) $("city").value = "";
+        if (_auto.group && $("bpGroup").value === _auto.group) $("bpGroup").value = "";
+        _auto = null;
+      }
+      // Exact existing name typed or pasted: auto-fill its details once
+      if (trimmed && bpKnown[trimmed] && !(_auto && _auto.name === trimmed)) applyAutofill(bpKnown[trimmed]);
+
       if (!trimmed) {
         notice.style.display = "none";
         return;
@@ -1037,6 +1223,8 @@
           $("bpName").value = "";
           $("bpGroup").value = "";
           $("city").value = "";
+          _auto = null;
+          hideDd();
           $("waInput").value = "";
           $("matchNotice").style.display = "none";
           $("gpsBox").style.display = "none";
