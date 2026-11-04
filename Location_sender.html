@@ -286,6 +286,9 @@
         <button class="btn-porter" id="btnPorter">
           <i class="fa-solid fa-truck-fast"></i> Book Porter (Exact Pin)
         </button>
+        <button class="btn-porter" id="btnOpenWith" style="background:linear-gradient(135deg,#475569,#1e293b);box-shadow:0 4px 12px rgba(30,41,59,.3)">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open with other app (Porter / Maps / ...)
+        </button>
         <button class="btn-wa" id="btnWa">
           <i class="fa-brands fa-whatsapp"></i> Share Details on WhatsApp
         </button>
@@ -457,6 +460,11 @@ async function _ensureOwner() {
             }
             var photo = S(r["Photo Link"] || r["Sales Photo Link"] || r["Driver Photo Link"] || r["photo link (Sales Team)"]);
             var hasPin = !!(lat && lng);
+            var aLat = "", aLng = "";   // rough area pin from the Google check (used only for Porter, with a warning)
+            if (!hasPin) {
+              var ma = parseFloat(r["Map Lat"]), mb = parseFloat(r["Map Lng"]);
+              if (isFinite(ma) && isFinite(mb) && ma > 6 && ma < 38 && mb > 67 && mb < 98) { aLat = ma.toFixed(6); aLng = mb.toFixed(6); }
+            }
             var repName = r["Sales Employee"] || "";
             var repMob = ph10(r["S.e Mobile"]);
             if (repName && repMob && !SHEET_REP[repName]) SHEET_REP[repName] = repMob;
@@ -474,7 +482,9 @@ async function _ensureOwner() {
               photo,
               hasPin ? S(r["Location Confidence"]) : "",
               hasPin ? S(r["Location Status"]) : "",
-              repMob
+              repMob,
+              aLat,
+              aLng
             ];
           }).filter(function(b) { return b[0]; });
           toast("● " + BPS.length + " Parties Loaded Live", 2200);
@@ -541,7 +551,9 @@ async function _ensureOwner() {
         hasGps: hasGps,
         photoUrl: photoUrl,
         conf: b[10] || "",
-        ls: b[11] || ""
+        ls: b[11] || "",
+        aLat: b[13] || "",
+        aLng: b[14] || ""
       };
 
       $("q").value = curBp.name;
@@ -586,28 +598,44 @@ async function _ensureOwner() {
       });
     }
 
-    // Porter launch with exact drop coordinates via Android app chooser (Photo NOT passed)
-    $("btnPorter").onclick = function() {
-      if (!curBp) return toast("Please select a Business Partner first!");
-
-      // Porter has no public "book?drop=" link, so we use the same standard
-      // Android location intent (geo:) that opens from a shared map pin.
-      // Android then shows the app chooser (Porter / Google Maps), exactly
-      // like tapping a location link received on WhatsApp.
-      var isAndroid = /android/i.test(navigator.userAgent);
-      var mapUrl = getMapUrl(curBp);
-
-      if (isAndroid && curBp.hasGps) {
-        toast("Select Porter from the list", 2500);
-        var label = encodeURIComponent(curBp.name);
-        window.location.href = "geo:" + curBp.lat + "," + curBp.lng +
-                               "?q=" + curBp.lat + "," + curBp.lng + "(" + label + ")";
-      } else {
-        // No exact pin or not Android: open the map link (user can pick Porter from there)
-        toast("Opening map link...", 1500);
+    // Book Porter: opens the Porter app straight at the shop pin. "Open with other app": Android shows its list of map apps.
+    // Both use the saved latitude / longitude. A rough area pin (from the Google check) is used only with a warning.
+    function pinForApps() {
+      if (!curBp) { toast("Please select a Business Partner first!"); return null; }
+      if (curBp.hasGps) return { lat: curBp.lat, lng: curBp.lng, rough: false };
+      if (curBp.aLat && curBp.aLng) return { lat: curBp.aLat, lng: curBp.aLng, rough: true };
+      return { lat: "", lng: "", rough: false };
+    }
+    // The name inside the link must not contain ( ) or other special characters, or the apps can fail to read the pin
+    function pinLabel() {
+      return encodeURIComponent(String(curBp.name).replace(/[()\[\]{}<>"'`*!]/g, " ").replace(/\s+/g, " ").trim().substring(0, 60))
+        .replace(/[!'()*]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); });
+    }
+    function launchPin(mode) {
+      var pin = pinForApps();
+      if (!pin) return;
+      var isAndroid = /android/i.test(navigator.userAgent), mapUrl = getMapUrl(curBp);
+      if (!isAndroid || !pin.lat) {
+        // No pin saved yet, or not an Android phone: open the Google Maps link (Porter can be picked from there)
+        toast(pin.lat ? "Opening map link..." : "No pin saved for this party yet. Opening map search", 2200);
         window.location.href = mapUrl;
+        return;
       }
-    };
+      var q = pin.lat + "," + pin.lng + "?q=" + pin.lat + "," + pin.lng + "(" + pinLabel() + ")";
+      var go = function () {
+        if (mode === "porter") {
+          // Straight into the Porter app. If Porter is not installed, the Google Maps link opens instead
+          window.location.href = "intent:" + q + "#Intent;scheme=geo;package=com.theporter.android.customerapp;S.browser_fallback_url=" + encodeURIComponent(mapUrl) + ";end";
+        } else {
+          toast("Choose an app from the list", 2500);
+          window.location.href = "geo:" + q;
+        }
+      };
+      if (pin.rough) { toast("Only a rough area pin. Please check the exact shop in the app", 3500); setTimeout(go, 1100); }
+      else { if (mode === "porter") toast("Opening Porter... if it does not open, use Open with other app", 2500); go(); }
+    }
+    $("btnPorter").onclick = function () { launchPin("porter"); };
+    $("btnOpenWith").onclick = function () { launchPin("choose"); };
 
     // Share Details on WhatsApp (Clean text, Photo NOT shared, only Google Maps pin)
     $("btnWa").onclick = function() {
