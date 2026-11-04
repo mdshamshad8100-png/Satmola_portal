@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Satmola Location Sender",
+  "short_name": "Location",
+  "description": "Find a party, share its location and book Porter",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1f2229",
+  "theme_color": "#d91f2f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
