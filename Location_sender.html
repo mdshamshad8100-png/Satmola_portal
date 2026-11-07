@@ -951,16 +951,24 @@ async function _ensureOwner() {
       if (!curBp) return toast("Please select a Business Partner first!");
       var isAndroid = /android/i.test(navigator.userAgent);
       var drop = curBp.hasGps ? (curBp.lat + "," + curBp.lng) : [curBp.name, curBp.block, curBp.city].filter(Boolean).join(", ");
-      copyText(drop).then(function(ok) {
-        toast(ok ? ((curBp.hasGps ? "Pin copied: " : "Address copied: ") + drop + " - paste it in Porter drop location") : "Opening Porter...", 4000);
+      // The exact pin (latitude,longitude) is copied quietly, then the Porter app is opened. Paste it in Porter's drop box.
+      copyText(drop).then(function() {
+        if (!isAndroid) { window.open("https://porter.in/", "_blank"); return; }
+        var opened = false;
+        var mark = function() { if (document.hidden) opened = true; };
+        document.addEventListener("visibilitychange", mark);
+        window.addEventListener("pagehide", function() { opened = true; });
+        // 1st try: open the installed Porter app. No Play Store fallback.
+        window.location.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.theporter.android.customerapp;end";
+        // 2nd try if the app did not open
         setTimeout(function() {
-          if (isAndroid) {
-            window.location.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.theporter.android.customerapp;S.browser_fallback_url=" +
-              encodeURIComponent("https://play.google.com/store/apps/details?id=com.theporter.android.customerapp") + ";end";
-          } else {
-            window.location.href = "https://porter.in/";
-          }
-        }, 900);
+          if (opened || document.hidden) return;
+          window.location.href = "android-app://com.theporter.android.customerapp";
+          setTimeout(function() {
+            document.removeEventListener("visibilitychange", mark);
+            if (!opened && !document.hidden) toast("Could not open Porter. Please open the Porter app yourself, the pin is copied.", 4000);
+          }, 1300);
+        }, 1300);
       });
     };
 
