@@ -1521,10 +1521,17 @@
 
       let lat = null, lng = null;
 
-      let m = v.match(atRegex) || v.match(qRegex) || v.match(embedRegex) ||
-              v.match(/[?&](?:ll|sll|center|viewpoint)=(-?\d+\.\d+)(?:,|%2C)(-?\d+\.\d+)/i) ||
+      // Order matters: the "!3d..!4d.." pair is the exact place pin. "@lat,lng" is only the map centre (can be hundreds of metres away), so it is the last choice.
+      let centreOnly = false;
+      let m = v.match(embedRegex) || v.match(qRegex) ||
+              v.match(/[?&]ll=(-?\d+\.\d+)(?:,|%2C)(-?\d+\.\d+)/i) ||
               v.match(/\/(?:search|dir|place)\/(-?\d+\.\d+),\+?(-?\d+\.\d+)/) ||
               v.match(/^geo:(-?\d+\.\d+),(-?\d+\.\d+)/i);
+      if (!m) {
+        m = v.match(atRegex);
+        if (m) centreOnly = true;
+        else m = v.match(/[?&](?:sll|center|viewpoint)=(-?\d+\.\d+)(?:,|%2C)(-?\d+\.\d+)/i);
+      }
       if (m) {
         lat = parseFloat(m[1]).toFixed(6);
         lng = parseFloat(m[2]).toFixed(6);
@@ -1563,6 +1570,7 @@
           <div class="live-link-info">
             <i class="fa-solid fa-link"></i> <b>Sheet Hyperlink:</b> ${liveMapHyperlink}
           </div>
+          ${centreOnly ? '<div style="font-size:12px;color:#9a6a00;margin-top:6px">This link only gives the map centre. Tap Test Map Pin to check it. For the exact shop pin, open the shop in Google Maps, press Share and paste that link.</div>' : ''}
         `;
         checkReady();
       } else if (v.startsWith("http://") || v.startsWith("https://")) {
