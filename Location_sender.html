@@ -950,26 +950,15 @@ async function _ensureOwner() {
     $("btnPorter").onclick = function() {
       if (!curBp) return toast("Please select a Business Partner first!");
       var isAndroid = /android/i.test(navigator.userAgent);
-      var drop = curBp.hasGps ? (curBp.lat + "," + curBp.lng) : [curBp.name, curBp.block, curBp.city].filter(Boolean).join(", ");
-      // The exact pin (latitude,longitude) is copied quietly, then the Porter app is opened. Paste it in Porter's drop box.
-      copyText(drop).then(function() {
-        if (!isAndroid) { window.open("https://porter.in/", "_blank"); return; }
-        var opened = false;
-        var mark = function() { if (document.hidden) opened = true; };
-        document.addEventListener("visibilitychange", mark);
-        window.addEventListener("pagehide", function() { opened = true; });
-        // 1st try: open the installed Porter app. No Play Store fallback.
-        window.location.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.theporter.android.customerapp;end";
-        // 2nd try if the app did not open
-        setTimeout(function() {
-          if (opened || document.hidden) return;
-          window.location.href = "android-app://com.theporter.android.customerapp";
-          setTimeout(function() {
-            document.removeEventListener("visibilitychange", mark);
-            if (!opened && !document.hidden) toast("Could not open Porter. Please open the Porter app yourself, the pin is copied.", 4000);
-          }, 1300);
-        }, 1300);
-      });
+      var label = String(curBp.name || "Store").replace(/[()\[\]{}<>&#?%+=\/\\;:"']/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+      var hasPin = !!curBp.hasGps;
+      var q = hasPin ? (curBp.lat + "," + curBp.lng) : [curBp.name, curBp.block, curBp.city].filter(Boolean).join(", ");
+      var webMap = "https://www.google.com/maps?q=" + encodeURIComponent(q);
+      copyText(q);   // quiet backup copy, no message
+      if (!isAndroid) { window.open(webMap, "_blank"); return; }
+      // Same as tapping a map link in WhatsApp: Android shows its own "Open with" list (Porter, Maps, Rapido...) for the exact pin.
+      var geo = hasPin ? ("0,0?q=" + q + "(" + encodeURIComponent(label) + ")") : ("0,0?q=" + encodeURIComponent(q));
+      window.location.href = "intent:" + geo + "#Intent;scheme=geo;action=android.intent.action.VIEW;S.browser_fallback_url=" + encodeURIComponent(webMap) + ";end";
     };
 
     // Share Details on WhatsApp (Clean text, Photo NOT shared, only Google Maps pin)
