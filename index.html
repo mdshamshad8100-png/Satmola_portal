@@ -78,10 +78,10 @@ input:focus,.btn:focus-visible,.tile:focus-visible,button:focus-visible{outline:
 /* app viewer */
 #viewer{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column}
 #viewer.on{display:flex}
-#vbar{display:flex;align-items:center;gap:8px;background:var(--navy);color:#fff;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
-#vbar button{background:none;border:0;color:#fff;font:700 15px "Plus Jakarta Sans",sans-serif;min-height:44px;padding:0 8px;cursor:pointer}
-#vbar span{font-weight:700;font-size:16px}
-#vframes{position:relative;flex:1;background:#fff}
+#vBack{position:absolute;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;width:46px;height:46px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.28);opacity:.92;cursor:pointer}
+#vBack:active{transform:scale(.94)}
+#vBack svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#vframes{position:absolute;inset:0;background:#fff}
 #vframes iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
 #vframes iframe[hidden]{display:none}
 /* opening animation */
@@ -193,7 +193,7 @@ s.addEventListener("click",done);setTimeout(done,3000);})();</script>
 </div>
 
 <div id="sheetBg"><div id="sheet" role="dialog" aria-label="Sign in"><h3>Sign in to continue</h3><p>Log in, or register and wait for the owner to approve you.</p><button class="btn" data-go="login">Login</button><button class="btn alt" data-go="register">Register</button><button class="btn alt" data-go="adminLogin">Admin login</button><button class="back" id="sheetX" style="width:100%;margin-top:8px">Cancel</button></div></div>
-<div id="viewer"><div id="vbar"><button id="vBack" aria-label="Back to home">&lsaquo; Home</button><span id="vTitle"></span></div><div id="vframes"></div></div>
+<div id="viewer"><button id="vBack" aria-label="Back to Satmola All home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></button><div id="vframes"></div></div>
 
 <script>
 /* ===== CONFIG ===== */
@@ -370,10 +370,11 @@ var THEMES = [["#0B2545","#13396B"],["#0B4F4A","#127A72"],["#3B1F6B","#5B35A0"],
     var a = APPS.filter(function (x) { return x.id === id; })[0], host = $("vframes"), f = host.querySelector('iframe[data-k="' + id + '"]');
     if (!f) { f = document.createElement("iframe"); f.setAttribute("data-k", id); f.title = a.name; f.setAttribute("allow", "geolocation; camera; microphone; clipboard-write"); f.src = a.url; host.appendChild(f); }
     host.querySelectorAll("iframe").forEach(function (x) { x.hidden = x !== f; });
-    $("vTitle").textContent = a.name; $("viewer").classList.add("on");
+    $("viewer").classList.add("on"); setBar("#ffffff");
     try { history.pushState({ v: id }, ""); } catch (e) {}
   }
-  function closeApp() { $("viewer").classList.remove("on"); refreshMe(); }
+  function setBar(c) { var m = $("themeMeta"); if (m) m.setAttribute("content", c); }
+  function closeApp() { $("viewer").classList.remove("on"); applyTheme(); refreshMe(); }
   function refreshMe(loud) {
     var tok = ls(TOK) || "";
     if (S.role !== "user" || !tok) return;
