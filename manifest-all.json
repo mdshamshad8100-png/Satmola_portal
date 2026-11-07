@@ -1,0 +1,17 @@
+{
+  "id": "satmola-all",
+  "name": "Satmola All",
+  "short_name": "Satmola All",
+  "description": "Satmola: Routing Hub, Sales, Location and Driver apps in one place",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B2545",
+  "theme_color": "#0B2545",
+  "icons": [
+    { "src": "assets/satmola-all-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/satmola-all-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/satmola-all-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
