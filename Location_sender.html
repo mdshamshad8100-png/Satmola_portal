@@ -255,7 +255,7 @@
   <!-- Opening animation: play once per app launch (skipped if already shown in this session) -->
   <script>
     try {
-      if (window.parent !== window || sessionStorage.getItem("spShown_location")) document.documentElement.className += " sp-skip";
+      if ((window.parent === window && sessionStorage.getItem("spShown_location"))) document.documentElement.className += " sp-skip";
       else sessionStorage.setItem("spShown_location", "1");
     } catch (e) {}
   </script>
@@ -957,7 +957,7 @@ async function _ensureOwner() {
       copyText(q);   // quiet backup copy, no message
       if (!isAndroid) { window.open(webMap, "_blank"); return; }
       // Same as tapping a map link in WhatsApp: Android shows its own "Open with" list (Porter, Maps, Rapido...) for the exact pin.
-      var geo = hasPin ? ("0,0?q=" + q + "(" + encodeURIComponent(label) + ")") : ("0,0?q=" + encodeURIComponent(q));
+      var geo = hasPin ? (q + "?q=" + q + "(" + encodeURIComponent(label) + ")") : ("0,0?q=" + encodeURIComponent(q));   // real lat,lng in both places so every app reads the same exact pin
       window.location.href = "intent:" + geo + "#Intent;scheme=geo;action=android.intent.action.VIEW;S.browser_fallback_url=" + encodeURIComponent(webMap) + ";end";
     };
 

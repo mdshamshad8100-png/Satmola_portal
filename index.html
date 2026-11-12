@@ -111,21 +111,6 @@ input:focus,.btn:focus-visible,.tile:focus-visible,button:focus-visible{outline:
 }
 @media(prefers-reduced-motion:reduce){#splash .tx,#splash .sb,#splash .ap img{opacity:1}}
 @media(prefers-reduced-motion:no-preference){.screen.on{animation:f .2s}@keyframes f{from{opacity:0}to{opacity:1}}}
-
-/* first-time setup: locked black screen */
-body.setupmode,body.setupmode .wrap{background:#000}
-#setup{min-height:100vh;background:#000;color:#ECECEC}
-#setup .card{background:#0E0E10;border:1px solid #2A2A2E;box-shadow:none;color:#ECECEC}
-#setup h2{color:#fff}#setup .sub,#setup label{color:#9A9AA3}
-#setup input{background:#17171A;border:1px solid #33333A;color:#fff}
-#setup .btn{background:#fff;color:#000}#setup .btn:disabled{opacity:.5}
-#setup .links a{color:#C8C8D0}
-#setup .lockic{width:56px;height:56px;border-radius:50%;border:1px solid #3A3A42;display:grid;place-items:center;margin:8px auto 12px;color:#fff}
-#setup .dots3{display:flex;gap:6px;justify-content:center;margin:0 0 6px}
-#setup .dots3 i{width:26px;height:4px;border-radius:2px;background:#2E2E34}#setup .dots3 i.on{background:#fff}
-#setup .stp{display:none}#setup .stp.on{display:block}
-#addBox{display:none;margin-bottom:14px}#addBox.on{display:block}
-.tag.Setup{background:#E7E7EC;color:#33333A}
 </style>
 </head>
 <body>
@@ -198,41 +183,9 @@ s.addEventListener("click",done);setTimeout(done,3000);})();</script>
   <div class="msg" id="aMsg" aria-live="polite"></div></div>
 </div></section>
 
-<section class="screen" id="setup"><div class="pg">
-  <div class="lockic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
-  <div class="dots3"><i id="sd1"></i><i id="sd2"></i><i id="sd3"></i></div>
-  <div class="card">
-    <div class="stp" id="st1"><h2>Complete your profile</h2><p class="sub">Your account is locked until you finish this one-time setup.</p>
-      <label for="sName">Full name</label><input id="sName" autocomplete="name">
-      <label for="sMob">Mobile number</label><input id="sMob" inputmode="numeric" maxlength="10" autocomplete="tel">
-      <label for="sMail">Email</label><input id="sMail" type="email" autocomplete="email" autocapitalize="none">
-      <button class="btn" id="sGo1">Send code to my email</button></div>
-    <div class="stp" id="st2"><h2>Check your email</h2><p class="sub" id="sSub"></p>
-      <label for="sCode">6-digit code</label><input id="sCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
-      <button class="btn" id="sGo2">Verify</button>
-      <div class="links"><a id="sResend">Send the code again</a><a id="sBack">Change details</a></div></div>
-    <div class="stp" id="st3"><h2>Set your password</h2><p class="sub">Choose a new password. You will use it from now on.</p>
-      <label for="sPw">New password (6+ characters)</label><input id="sPw" type="password" autocomplete="new-password">
-      <label for="sPw2">Confirm password</label><input id="sPw2" type="password" autocomplete="new-password">
-      <button class="btn" id="sGo3">Save and continue</button></div>
-    <div class="msg" id="sMsg" aria-live="polite"></div>
-    <div class="links" style="justify-content:center"><a id="sOut">Sign out</a></div>
-  </div>
-</div></section>
-
 <section class="screen" id="panel"><div class="pg">
   <div class="top"><h2 style="margin:0">Control panel</h2><button class="btn alt sm" data-go="home" style="margin:0">Home</button></div>
   <p class="sub" id="pStats"></p>
-  <button class="btn" id="addToggle" style="margin:0 0 12px">+ Add user</button>
-  <div class="card" id="addBox">
-    <h2 style="font-size:17px">New user</h2>
-    <p class="sub">Only a login ID and a temporary password. The person adds their own name, mobile and email on first sign-in.</p>
-    <label for="nId">Login ID (like raju01 or raju@1)</label><input id="nId" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">
-    <label for="nPw">Temporary password (6+ characters)</label><input id="nPw" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">
-    <label>Apps this person can open</label><div class="chips" id="nApps"></div>
-    <button class="btn" id="doAdd">Create user</button>
-    <div class="msg" id="nMsg" aria-live="polite"></div>
-  </div>
   <div class="ftabs" id="pTabs"></div>
   <div id="userList"></div>
 </div></section>
@@ -272,15 +225,11 @@ var THEMES = [["#0B2545","#13396B"],["#0B4F4A","#127A72"],["#3B1F6B","#5B35A0"],
   var S = { role: "guest", user: null, users: null, filter: "pending", otp: null, deferred: null };
 
   /* ---------- screens ---------- */
-  function needSetup() { return S.role === "user" && !!S.user && S.user.setup === true; }
   function go(id) {
-    if (needSetup() && id !== "setup") id = "setup";   // until the setup is done there is no other screen
-    document.body.classList.toggle("setupmode", id === "setup");
     document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("on"); });
     $(id).classList.add("on"); window.scrollTo(0, 0); closeMenu(); closeSheet();
     if (id === "home") renderHome();
     if (id === "panel") loadUsers();
-    if (id === "setup") { applyTheme(); showStep(S.sstep || 1); }
   }
   document.addEventListener("click", function (e) {
     var t = e.target.closest("[data-go]"); if (t) { e.preventDefault(); go(t.getAttribute("data-go")); }
@@ -299,13 +248,11 @@ var THEMES = [["#0B2545","#13396B"],["#0B4F4A","#127A72"],["#3B1F6B","#5B35A0"],
     return THEMES[0];
   }
   function applyTheme() {
-    var t = needSetup() ? ["#000000", "#111111"] : theme(), r = document.documentElement.style;
+    var t = theme(), r = document.documentElement.style;
     r.setProperty("--navy", t[0]); r.setProperty("--navy2", t[1]);
     var m = $("themeMeta"); if (m) m.setAttribute("content", t[0]);
   }
   function renderHome() {
-    if (needSetup()) { go("setup"); return; }
-    document.body.classList.remove("setupmode");
     applyTheme();
     var signed = S.role !== "guest";
     $("greet").textContent = signed ? greeting() : "Welcome";
@@ -467,7 +414,7 @@ var THEMES = [["#0B2545","#13396B"],["#0B4F4A","#127A72"],["#3B1F6B","#5B35A0"],
     if (x.status === "Pending") acts = B("ok", "approve", "Approve") + B("dn", "remove", "Reject");
     else if (x.status === "Blocked") acts = B("ok", "unblock", "Unblock") + B("dn", "remove", "Remove");
     else acts = (x.locked ? B("ok", "unlock", "Unlock") : "") + B("alt", "reset", "Reset password") + B("dn", "block", "Block");
-    return '<div class="row' + (x.status === "Pending" ? " pend" : "") + '"><b>' + esc(x.name || "@" + x.username) + '</b><span class="tag ' + esc(x.status) + '">' + esc(x.status) + '</span>' + (x.setup ? '<span class="tag Setup">Setup pending</span>' : "") + (x.locked ? '<span class="tag lk">Locked 24h</span>' : "") + (x.resetRequested ? '<span class="tag Pending">Password request</span>' : "") +
+    return '<div class="row' + (x.status === "Pending" ? " pend" : "") + '"><b>' + esc(x.name) + '</b><span class="tag ' + esc(x.status) + '">' + esc(x.status) + '</span>' + (x.locked ? '<span class="tag lk">Locked 24h</span>' : "") + (x.resetRequested ? '<span class="tag Pending">Password request</span>' : "") +
       '<br>@' + U + ' &middot; ' + esc(x.mobile) + (x.email ? '<br>' + esc(x.email) + (x.emailVerified ? " (verified)" : "") : "") + '<div class="chips">' + chips + '</div>' + acts + '</div>';
   }
   $("panel").addEventListener("click", function (e) {
@@ -477,90 +424,13 @@ var THEMES = [["#0B2545","#13396B"],["#0B4F4A","#127A72"],["#3B1F6B","#5B35A0"],
     var d = { act: "admin_set", key: ls(OWN) || "", username: un };
     if (act === "app") { var k = b.getAttribute("data-k"), a = (u.apps || []).slice(), i = a.indexOf(k); if (i > -1) a.splice(i, 1); else a.push(k); d.apps = a; }
     else if (act === "approve") d.status = "Approved";
-    else if (act === "block") { if (!confirm("Block " + (u.name || u.username) + "?")) return; d.status = "Blocked"; }
+    else if (act === "block") { if (!confirm("Block " + u.name + "?")) return; d.status = "Blocked"; }
     else if (act === "unblock") { d.status = "Approved"; d.unblock = true; }
     else if (act === "unlock") d.unblock = true;
-    else if (act === "remove") { if (!confirm("Remove " + (u.name || u.username) + "?")) return; d.remove = true; }
-    else if (act === "reset") { var p = prompt("New password for " + (u.name || u.username) + " (6+ characters):"); if (!p) return; if (p.length < 6) return alert("Password must be at least 6 characters."); d.newPass = p; }
-    api(d).then(function (r) { if (r.denied) return logout(); if (!r.ok) alert(r.error || "Could not save."); if (act === "reset" && r.ok) alert("New password set. Tell it to " + (u.name || u.username) + "."); loadUsers(); });
+    else if (act === "remove") { if (!confirm("Remove " + u.name + "?")) return; d.remove = true; }
+    else if (act === "reset") { var p = prompt("New password for " + u.name + " (6+ characters):"); if (!p) return; if (p.length < 6) return alert("Password must be at least 6 characters."); d.newPass = p; }
+    api(d).then(function (r) { if (r.denied) return logout(); if (!r.ok) alert(r.error || "Could not save."); if (act === "reset" && r.ok) alert("New password set. Tell it to " + u.name + "."); loadUsers(); });
   });
-
-  /* ---------- add user (owner) ---------- */
-  var nSel = [];
-  function renderAddApps() {
-    $("nApps").innerHTML = APPS.map(function (p) { var on = nSel.indexOf(p.id) > -1; return '<button type="button" class="chip' + (on ? " on" : "") + '" data-nk="' + p.id + '">' + esc(p.name) + (on ? " on" : " off") + '</button>'; }).join("");
-  }
-  $("addToggle").onclick = function () { var b = $("addBox"); b.classList.toggle("on"); if (b.classList.contains("on")) renderAddApps(); };
-  $("nApps").addEventListener("click", function (e) {
-    var c = e.target.closest("[data-nk]"); if (!c) return; var k = c.getAttribute("data-nk"), i = nSel.indexOf(k);
-    if (i > -1) nSel.splice(i, 1); else nSel.push(k); renderAddApps();
-  });
-  $("doAdd").onclick = function () {
-    var id = $("nId").value.trim().toLowerCase(), pw = $("nPw").value;
-    if (!/^[a-z0-9][a-z0-9_.@-]{3,19}$/.test(id)) return say("nMsg", "Login ID must be 4 to 20 characters: letters, numbers and _ . @ -");
-    if (pw.length < 6) return say("nMsg", "Temporary password must be at least 6 characters.");
-    var b = $("doAdd"); b.disabled = true; say("nMsg", "Creating...", true);
-    api({ act: "admin_add", key: ls(OWN) || "", username: id, pass: pw, apps: nSel }).then(function (r) {
-      b.disabled = false;
-      if (r.denied) return logout();
-      if (!r.ok) return say("nMsg", r.error || "Could not create the user.");
-      say("nMsg", "Created. Give this to the person: Login ID " + id + " and the temporary password.", true);
-      $("nId").value = $("nPw").value = ""; nSel = []; renderAddApps(); S.filter = "approved"; loadUsers();
-    });
-  };
-
-  /* ---------- first-time setup (person created by the owner) ---------- */
-  function showStep(n) {
-    S.sstep = n;
-    [1, 2, 3].forEach(function (i) { $("st" + i).classList.toggle("on", i === n); $("sd" + i).classList.toggle("on", i <= n); });
-    say("sMsg", "");
-  }
-  function setupFail(r) {
-    if (r.expired) { logout(); return; }
-    if (r.restart) { showStep(1); }
-    say("sMsg", r.error || "Something went wrong. Try again.");
-  }
-  $("sGo1").onclick = function () {
-    var name = $("sName").value.trim(), mob = $("sMob").value.trim(), em = $("sMail").value.trim().toLowerCase(), err = "";
-    if (name.length < 2) err = "Enter your full name."; else if (!/^[6-9]\d{9}$/.test(mob)) err = "Enter a valid 10-digit mobile number."; else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) err = "Enter a valid email address.";
-    if (err) return say("sMsg", err);
-    var b = $("sGo1"); b.disabled = true; say("sMsg", "Sending the code...", true);
-    api({ act: "complete_setup", token: ls(TOK) || "", name: name, mobile: mob, email: em }).then(function (r) {
-      b.disabled = false;
-      if (!r.ok) return setupFail(r);
-      if (r.verified) { showStep(3); return; }
-      $("sSub").textContent = r.message || "We sent a 6-digit code to your email.";
-      $("sCode").value = ""; showStep(2); say("sMsg", "Code sent. It works for 10 minutes.", true);
-    });
-  };
-  $("sGo2").onclick = function () {
-    var code = $("sCode").value.replace(/\D/g, "");
-    if (code.length !== 6) return say("sMsg", "Enter the 6-digit code.");
-    var b = $("sGo2"); b.disabled = true; say("sMsg", "Checking...", true);
-    api({ act: "setup_verify", token: ls(TOK) || "", otp: code }).then(function (r) {
-      b.disabled = false;
-      if (!r.ok) return setupFail(r);
-      showStep(3); say("sMsg", "Email verified.", true);
-    });
-  };
-  $("sResend").onclick = function () {
-    api({ act: "setup_resend", token: ls(TOK) || "" }).then(function (r) { if (!r.ok) return setupFail(r); say("sMsg", r.message || "A new code was sent.", true); });
-  };
-  $("sBack").onclick = function () { showStep(1); };
-  $("sGo3").onclick = function () {
-    var p1 = $("sPw").value, p2 = $("sPw2").value;
-    if (p1.length < 6) return say("sMsg", "Password must be at least 6 characters.");
-    if (p1 !== p2) return say("sMsg", "The two passwords do not match.");
-    var b = $("sGo3"); b.disabled = true; say("sMsg", "Saving...", true);
-    api({ act: "setup_finish", token: ls(TOK) || "", pass: p1 }).then(function (r) {
-      b.disabled = false;
-      if (!r.ok) return setupFail(r);
-      S.user = r.user; ls(TOK, r.token); ls(USR, JSON.stringify(r.user)); S.sstep = 1;
-      ["sName", "sMob", "sMail", "sCode", "sPw", "sPw2"].forEach(function (i) { $(i).value = ""; });
-      go("home");
-    });
-  };
-  $("sOut").onclick = function () { S.sstep = 1; logout(); };
 
   /* ---------- start ---------- */
   function boot() {

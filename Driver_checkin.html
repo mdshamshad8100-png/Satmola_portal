@@ -92,7 +92,7 @@
   <!-- Opening animation: play once per app launch (skipped if already shown in this session) -->
   <script>
     try {
-      if (window.parent !== window || sessionStorage.getItem("spShown_driver")) document.documentElement.className += " sp-skip";
+      if ((window.parent === window && sessionStorage.getItem("spShown_driver"))) document.documentElement.className += " sp-skip";
       else sessionStorage.setItem("spShown_driver", "1");
     } catch (e) {}
   </script>
