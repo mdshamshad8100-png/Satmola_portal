@@ -659,7 +659,7 @@ $("shOpt").onclick=function(){$("opt").onclick();renderSheet()};
 $("shWa").onclick=function(){go("https://wa.me/?text="+encodeURIComponent(sheetText()),"_blank")};
 $("shCp").onclick=function(){copy(sheetText())};
 $("shPdf").onclick=function(){try{window.print()}catch(e){toast("Press Ctrl+P, then choose Save as PDF")}};
-var SBX=(window.top!==window.self)||(window.origin==="null"&&location.protocol!=="file:");
+var SBX=(function(){var fr=false;try{if(window.top!==window.self){void window.top.location.href;}}catch(e){fr=true;}return fr||(window.origin==="null"&&location.protocol!=="file:");})();   /* a page framed by another site is limited; framed inside Satmola All (same site) is fine */
 var MOB=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 function nav(u){location.href=u}
 function openUrl(u){var w=null;try{w=window.open(u,"_blank")}catch(e){}if(w){try{w.opener=null}catch(e){}}else{nav(u)}}
