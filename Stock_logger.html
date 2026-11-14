@@ -1,0 +1,2574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Satmola Daily Stock Logger</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for JPG snapshot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- ExcelJS for real formatted .xlsx reports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        satmolaRed: '#cf1020',
+                        satmolaDarkRed: '#a80b18',
+                        satmolaYellow: '#fed100',
+                        excelGreen: '#E2EFDA',
+                        excelGreenText: '#375623'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&display=swap');
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-mono-code {
+            font-family: 'Roboto Mono', monospace;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        /* Excel Table Exact Matching Style (separate borders so the sticky HEAD column keeps its lines on mobile) */
+        .excel-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            border-top: 1px solid #000000;
+            border-left: 1px solid #000000;
+        }
+        .excel-table th, .excel-table td {
+            border-right: 1px solid #000000;
+            border-bottom: 1px solid #000000;
+        }
+        .excel-header-date {
+            background-color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            padding: 7px;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+        .excel-col-header {
+            background-color: #E2EFDA;
+            color: #375623;
+            font-weight: 700;
+            font-size: 13.5px;
+            padding: 6px 8px;
+        }
+        .excel-cell {
+            padding: 6px 8px;
+            font-size: 13px;
+            color: #111;
+        }
+        .excel-num-cell {
+            padding: 6px 8px;
+            font-size: 13px;
+            text-align: right;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+        }
+        .excel-head-col { min-width: 84px; }
+        .excel-round-col { width: 58px; }
+        .excel-total-col { width: 80px; }
+        /* HEAD column stays visible while the table is scrolled sideways */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background-color: #ffffff;
+        }
+        th.sticky-col { background-color: #E2EFDA; }
+
+        /* Mobile fit: smaller table, no forced minimum width */
+        @media (max-width: 639px) {
+            .excel-header-date { font-size: 12.5px; padding: 5px; }
+            .excel-col-header { font-size: 11px; padding: 4px 3px; }
+            .excel-cell { font-size: 11px; padding: 4px 3px; }
+            .excel-num-cell { font-size: 11px; padding: 4px 3px; }
+            .excel-head-col { min-width: 66px; }
+            .excel-round-col { width: 36px; }
+            .excel-total-col { width: 46px; }
+        }
+        /* Custom scrollbar for search popups & table */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Printing: only the temporary #print-clone (built by the Print / PDF button) is shown */
+        #print-clone { display: none; }
+        @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body > *:not(#print-clone) { display: none !important; }
+            #print-clone { display: block !important; background: #ffffff; }
+            .sticky-col { position: static !important; }
+            .no-export { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-16">
+    <!-- Sign-in gate (Satmola All login is required to add stock) -->
+    <div id="gate" style="display:none;position:fixed;inset:0;z-index:9999;background:#f1f5f9;align-items:center;justify-content:center;padding:24px;">
+        <div style="max-width:360px;width:100%;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:24px;text-align:center;border-top:4px solid #e21c25;">
+            <div style="font-size:34px;line-height:1;">&#128274;</div>
+            <h2 id="gate-title" style="margin:10px 0 6px;font-size:18px;font-weight:800;color:#7f1d1d;">Sign in required</h2>
+            <p id="gate-text" style="margin:0 0 16px;font-size:13px;color:#475569;">Please sign in in Satmola All first, then open Stock Logger from there.</p>
+            <a id="gate-btn" href="index.html" target="_top" style="display:block;padding:12px;border-radius:10px;background:#e21c25;color:#fff;font-weight:800;font-size:14px;text-decoration:none;">Open Satmola All</a>
+            <button id="gate-retry" type="button" style="margin-top:10px;background:none;border:0;color:#475569;font-size:12px;text-decoration:underline;">I already signed in - check again</button>
+        </div>
+    </div>
+    <div id="sync-pill" style="position:fixed;top:6px;right:6px;z-index:60;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:#e2e8f0;color:#334155;box-shadow:0 1px 3px rgba(0,0,0,.2);max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;display:none;"></div>
+
+
+    <!-- Top Official Satmola Header -->
+    <header class="bg-gradient-to-r from-satmolaDarkRed via-satmolaRed to-satmolaDarkRed text-white shadow-md border-b-2 border-satmolaYellow">
+        <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-3 gap-y-2">
+            <div class="flex items-center space-x-2 sm:space-x-3 order-1 min-w-0 flex-1 sm:flex-none">
+                <!-- Exact Satmola Oval Brand Logo -->
+                <div class="flex items-center">
+                    <svg viewBox="0 0 280 120" class="h-9 sm:h-12 w-auto drop-shadow-md select-none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Golden Beige Outer Rim -->
+                        <ellipse cx="140" cy="60" rx="136" ry="56" fill="#e8c285" stroke="#c99f5e" stroke-width="2" />
+                        <!-- Deep Red Oval -->
+                        <ellipse cx="140" cy="60" rx="126" ry="48" fill="#e21c25" />
+                        <!-- White Bold SATMOLA Text with Red Stroke -->
+                        <text x="140" y="75" 
+                              text-anchor="middle" 
+                              font-family="'Impact', 'Arial Black', sans-serif" 
+                              font-weight="900" 
+                              font-size="44" 
+                              letter-spacing="0.5"
+                              fill="#ffffff" 
+                              stroke="#c8131b" 
+                              stroke-width="5" 
+                              stroke-linejoin="round"
+                              paint-order="stroke fill">SATMOLA</text>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-xs uppercase tracking-widest text-satmolaYellow font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-boxes-stacked text-satmolaYellow"></i> Daily Stock Logger
+                    </h1>
+                    <p class="text-[11px] text-white/90 font-medium truncate">Factory Dispatch & Production System</p>
+                </div>
+            </div>
+
+            <!-- Active Qty Badge (top right on phone, far right on large screens) -->
+            <div class="text-right pl-2 border-l border-white/20 order-2 sm:order-3 shrink-0">
+                <span class="text-[10px] uppercase font-semibold text-white/80 block">Active Qty</span>
+                <span id="badge-total-items" class="bg-white/20 backdrop-blur-sm text-satmolaYellow font-extrabold text-sm px-2.5 py-0.5 rounded-md border border-white/30">0</span>
+            </div>
+
+            <!-- Header Actions: on phone they sit on their own row below the logo -->
+            <div class="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-3 order-3 sm:order-2">
+                <button type="button" onclick="openMasterReportModal()" class="px-3 py-2 sm:py-1.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-700 active:scale-95 transition text-white border border-emerald-400/40 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-chart-pie text-emerald-300"></i>
+                    <span>Master Report</span>
+                </button>
+                <button type="button" onclick="openHistoryModal()" class="px-3 py-2 sm:py-1.5 rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 transition text-white border border-white/30 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-clock-rotate-left text-satmolaYellow"></i>
+                    <span>History</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 sm:space-y-5">
+
+        <!-- 1. Entry Form -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 md:p-6 relative">
+            <div class="flex items-center justify-between border-b pb-3 mb-4">
+                <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-red-100 text-satmolaRed flex items-center justify-center text-xs shadow-inner">
+                        <i class="fa-solid fa-pen-nib"></i>
+                    </span>
+                    <span>Daily Stock Entry</span>
+                </h2>
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                        <i class="fa-solid fa-floppy-disk text-emerald-600"></i> Saved on this phone
+                    </span>
+                </div>
+            </div>
+
+            <form id="entry-form" onsubmit="handleSaveEntry(event)" class="space-y-4">
+                <!-- Row 1: Interactive Date Calendar Picker -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-regular fa-calendar-days text-satmolaRed"></i> Entry Date (Calendar)
+                        </span>
+                        <span class="text-[11px] font-semibold text-slate-500" id="formatted-date-label">Today</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <input type="date" id="calendar-picker" required
+                                onchange="onCalendarDateChanged(this.value)"
+                                class="w-full text-sm font-semibold px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-satmolaRed focus:outline-none bg-slate-50 text-slate-800 cursor-pointer shadow-sm">
+                        </div>
+                        <button type="button" onclick="setTodayDate()" class="px-3 py-2.5 text-xs font-bold rounded-lg border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-95 transition">
+                            Today
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Product HEAD Code Input with custom styled dropdown -->
+                <div class="relative" data-dd="1">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-barcode text-satmolaDarkRed"></i> Product HEAD Code
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-normal">e.g. ABB5504, 3DB5168</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="head-input" placeholder="Type or search HEAD..." autocomplete="off"
+                            oninput="onHeadInput(this.value)"
+                            onfocus="onHeadFocus()"
+                            class="w-full text-sm font-bold font-mono-code uppercase px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-satmolaRed focus:outline-none bg-slate-50 text-satmolaDarkRed placeholder:font-sans placeholder:font-normal shadow-sm">
+                        <button type="button" onclick="toggleHeadDropdown()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-satmolaRed px-1">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Custom Suggestions Dropdown for HEAD -->
+                    <div id="head-results" class="hidden absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white rounded-lg border border-slate-200 shadow-xl custom-scroll divide-y divide-slate-100">
+                    </div>
+                </div>
+
+                <!-- Row 3: Product Name Input with custom styled dropdown -->
+                <div class="relative" data-dd="1">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-box-open text-amber-600"></i> Product Description / Name
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-normal">Auto-fills with HEAD</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="product-input" placeholder="Type product name (e.g. ALOO BHUJIA, CHIPS)..." autocomplete="off"
+                            oninput="onProductInput(this.value)"
+                            onfocus="onProductFocus()"
+                            class="w-full text-sm font-medium px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-satmolaRed focus:outline-none bg-slate-50 text-slate-800 shadow-sm">
+                        <button type="button" onclick="toggleProductDropdown()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-600 px-1">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Custom Suggestions Dropdown for Product Name -->
+                    <div id="product-results" class="hidden absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white rounded-lg border border-slate-200 shadow-xl custom-scroll divide-y divide-slate-100">
+                    </div>
+                </div>
+
+                <!-- Row 4: Quantity Input -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-calculator text-emerald-600"></i> Quantity (Count)
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-normal">Auto-sums same item</span>
+                    </label>
+                    <input type="number" inputmode="numeric" id="qty-input" min="1" step="1" placeholder="Enter quantity to add..." required
+                        class="w-full text-base font-bold px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-satmolaRed focus:outline-none bg-slate-50 text-slate-900 shadow-sm">
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" onclick="clearForm()" class="w-1/3 py-2.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-600 text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-rotate-left text-slate-400"></i> Clear
+                    </button>
+                    <button type="submit" class="w-2/3 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition shadow-md active:scale-95 flex items-center justify-center gap-2 tracking-wide">
+                        <i class="fa-solid fa-circle-plus text-sm"></i> ADD TO ACTIVE STOCK
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- 2. Dual Report & Action Bar -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                <span class="text-xs font-bold uppercase text-slate-700 tracking-wide flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-invoice text-satmolaRed"></i> Stock Reports & Export
+                </span>
+                <div class="flex items-center gap-3 text-xs">
+                    <button type="button" onclick="openMasterReportModal()" class="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-chart-line"></i> View Master Report
+                    </button>
+                    <span class="text-slate-300">|</span>
+                    <button onclick="confirmResetActiveStock()" class="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
+                        <i class="fa-regular fa-trash-can"></i> Reset Live Table
+                    </button>
+                </div>
+            </div>
+
+            <!-- Primary Action: Generate Batch Report (Downloads & Resets Live to 0) -->
+            <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrows-spin text-amber-600"></i> Generate Batch Report (Reset Active to 0)
+                    </h3>
+                    <p class="text-[11px] text-amber-700">Exports current live stock to Accounts and resets screen to 0. All entries stay archived in Master Report.</p>
+                </div>
+                <button type="button" onclick="generateBatchReportAndReset()" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg text-xs font-extrabold shadow-sm active:scale-95 transition flex items-center justify-center gap-2 shrink-0">
+                    <i class="fa-solid fa-file-arrow-down"></i> Generate & Reset
+                </button>
+            </div>
+
+            <!-- Export Buttons for Active View -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                <button onclick="exportToExcel('ACTIVE')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition active:scale-95 shadow-xs">
+                    <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i> Excel (.xlsx)
+                </button>
+                <button onclick="exportToPDF('ACTIVE')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold transition active:scale-95 shadow-xs">
+                    <i class="fa-solid fa-file-pdf text-rose-600 text-sm"></i> Print / PDF
+                </button>
+                <button onclick="exportToJPG('ACTIVE')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition active:scale-95 shadow-xs">
+                    <i class="fa-solid fa-image text-amber-600 text-sm"></i> Save as JPG
+                </button>
+                <button onclick="exportToDoc('ACTIVE')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 text-xs font-bold transition active:scale-95 shadow-xs">
+                    <i class="fa-solid fa-file-word text-blue-600 text-sm"></i> Save as Word
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. Exact Format Live Table (Active Stock) -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-3 bg-slate-50 border-b flex justify-between items-center text-xs text-slate-700">
+                <span class="font-bold uppercase tracking-wide flex items-center gap-1.5">
+                    <i class="fa-solid fa-table text-emerald-700"></i> Active Dispatch Table
+                </span>
+                <span id="active-summary" class="text-[11px] text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded font-semibold border border-emerald-200">
+                    0 items · 0 entries
+                </span>
+            </div>
+
+            <!-- Table Container (Snapshot target) -->
+            <div id="print-area" class="p-2 sm:p-4 bg-white overflow-x-auto custom-scroll">
+                <table class="excel-table text-left" id="main-report-table">
+                    <thead id="main-table-head">
+                        <!-- Rendered dynamically to fit rounds 1, 2, 3... -->
+                    </thead>
+                    <tbody id="report-table-body">
+                        <!-- Rows rendered dynamically -->
+                    </tbody>
+                    <tfoot id="report-table-foot">
+                        <!-- Grand total row rendered dynamically -->
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 4. "Master Report" Modal (all days, all reports) -->
+    <div id="master-report-modal" class="fixed inset-0 z-50 bg-black/60 flex items-stretch sm:items-center justify-center sm:p-4 hidden">
+        <div class="bg-white sm:rounded-2xl shadow-2xl sm:max-w-4xl w-full h-full sm:h-auto sm:max-h-[92vh] flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-emerald-800 to-emerald-700 text-white p-3 sm:p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-satmolaYellow shrink-0">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-white">Master Report</h3>
+                        <p class="text-[11px] text-emerald-100 truncate">Every entry and every generated report, saved day by day</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeMasterReportModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Controls -->
+            <div class="p-2.5 sm:p-3 bg-slate-50 border-b flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-slate-600">Date:</span>
+                    <input type="date" id="master-date-picker" onchange="renderMasterReport(this.value)" class="text-xs font-bold px-2 py-1.5 rounded border border-slate-300 bg-white">
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="exportMasterExcel()" class="px-2.5 py-1.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold border border-emerald-300 text-xs">
+                        <i class="fa-solid fa-file-excel mr-1"></i> Excel
+                    </button>
+                    <button type="button" onclick="exportToPDF('MASTER')" class="px-2.5 py-1.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold border border-rose-300 text-xs">
+                        <i class="fa-solid fa-print mr-1"></i> PDF
+                    </button>
+                    <button type="button" onclick="exportToJPG('MASTER')" class="px-2.5 py-1.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold border border-amber-300 text-xs">
+                        <i class="fa-solid fa-image mr-1"></i> JPG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="grid grid-cols-3 gap-1 p-1.5 bg-slate-100 border-b text-xs font-bold">
+                <button type="button" id="master-tab-day" onclick="setMasterTab('day')" class="py-2 rounded-lg">Day Report</button>
+                <button type="button" id="master-tab-reports" onclick="setMasterTab('reports')" class="py-2 rounded-lg">Reports Made</button>
+                <button type="button" id="master-tab-all" onclick="setMasterTab('all')" class="py-2 rounded-lg">All Days</button>
+            </div>
+
+            <!-- Master Content (scrolls inside the modal) -->
+            <div id="master-print-area" class="p-2.5 sm:p-4 overflow-auto flex-1 custom-scroll bg-white">
+                <!-- Pane 1: selected day, product wise with rounds -->
+                <div id="master-pane-day">
+                    <div id="master-stats" class="grid grid-cols-4 gap-1.5 sm:gap-2 mb-3"></div>
+                    <div class="overflow-x-auto custom-scroll">
+                        <table class="excel-table text-left" id="master-report-table">
+                            <thead id="master-table-head"></thead>
+                            <tbody id="master-table-body"></tbody>
+                            <tfoot id="master-table-foot"></tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pane 2: every report generated on the selected day -->
+                <div id="master-pane-reports" class="hidden">
+                    <div class="overflow-x-auto custom-scroll">
+                        <table class="excel-table text-left" id="master-reports-table">
+                            <thead id="master-reports-head"></thead>
+                            <tbody id="master-reports-body"></tbody>
+                            <tfoot id="master-reports-foot"></tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pane 3: every day at a glance -->
+                <div id="master-pane-all" class="hidden">
+                    <div class="overflow-x-auto custom-scroll">
+                        <table class="excel-table text-left" id="master-all-table">
+                            <thead id="master-all-head"></thead>
+                            <tbody id="master-all-body"></tbody>
+                            <tfoot id="master-all-foot"></tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 bg-slate-50 border-t flex justify-between items-center text-xs">
+                <span class="text-slate-500 font-medium" id="master-item-count-label">0 Unique Items</span>
+                <button type="button" onclick="closeMasterReportModal()" class="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. "Show History" Modal (timeline + product count) -->
+    <div id="history-modal" class="fixed inset-0 z-50 bg-black/60 flex items-stretch sm:items-center justify-center sm:p-4 hidden">
+        <div class="bg-white sm:rounded-2xl shadow-2xl sm:max-w-2xl w-full h-full sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-satmolaDarkRed to-satmolaRed text-white p-3 sm:p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-satmolaYellow shrink-0">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-white">Stock Entry History</h3>
+                        <p class="text-[11px] text-white/80 truncate" id="history-subtitle">Every entry, and how many times each product was loaded</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeHistoryModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Filter & Stats -->
+            <div class="p-2.5 sm:p-3 bg-slate-50 border-b flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-600 font-semibold">Date:</span>
+                    <select id="history-date-filter" onchange="renderHistory(this.value)" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+                <div class="text-slate-600 font-semibold">
+                    Entries: <span id="history-tx-count" class="font-extrabold text-satmolaDarkRed">0</span>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="grid grid-cols-2 gap-1 p-1.5 bg-slate-100 border-b text-xs font-bold">
+                <button type="button" id="history-tab-timeline" onclick="setHistoryTab('timeline')" class="py-2 rounded-lg">Timeline</button>
+                <button type="button" id="history-tab-counts" onclick="setHistoryTab('counts')" class="py-2 rounded-lg">Product Count</button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-3 sm:p-4 overflow-y-auto flex-1 custom-scroll bg-slate-50/50">
+                <div id="history-timeline-container"></div>
+                <div id="history-counts-container" class="hidden"></div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 bg-white border-t flex justify-end gap-2">
+                <button type="button" onclick="closeHistoryModal()" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast Message -->
+    <div id="toast" class="fixed bottom-5 left-4 right-4 sm:left-auto sm:right-5 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-lg shadow-xl flex items-center space-x-2.5 transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-text">Message</span>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+        // -------------------------------------------------------------
+        // 1. SATMOLA MASTER PRODUCT DATABASE (PRE-LOADED)
+        // -------------------------------------------------------------
+        const SATMOLA_MASTER = [
+            {"h": "ABB5504", "n": "ALOO BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "BBB5504", "n": "BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "BPB5504", "n": "BOONDI PUDINA Rs. 5/- 504 POUCH BAG"},
+            {"h": "CKNB5504", "n": "CHAKHNA Rs. 5/- 504 POUCH BAG"},
+            {"h": "CHJB5504", "n": "CHANA HING JEERA Rs. 5/- 504 POUCH BAG"},
+            {"h": "CPB5504", "n": "CHILLI PEANUT Rs. 5/- 504 POUCH BAG"},
+            {"h": "HSMB5504", "n": "HOT SPICY MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "KMB5504", "n": "KHATTA MEETHA Rs. 5/- 504 POUCH BAG"},
+            {"h": "LMB5504", "n": "LITE MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "MCB5505", "n": "MATAR CHATPATI Rs. 5/- 504 POUCH BAG"},
+            {"h": "MDB5504", "n": "MOONG DAL Rs. 5/- 504 POUCH BAG"},
+            {"h": "MMB5504", "n": "MUMBAIYA MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "NMB5504", "n": "NAVRATAN MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "PBB5504", "n": "PANEER BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "PTB5504", "n": "PANJABI TADKA Rs. 5/- 504 POUCH BAG"},
+            {"h": "SPB5504", "n": "SALTED PEANUT Rs. 5/- 504 POUCH BAG"},
+            {"h": "TNB5504", "n": "TASTY NUT Rs. 5/- 504 POUCH BAG"},
+            {"h": "CPMXB5306", "n": "CORN PEANUT MIXTURE Rs. 5/- 360 POUCH BAG"},
+            {"h": "NCB5504", "n": "NUTI CRAKKER Rs. 5/- 504 POUCH BAG"},
+            {"h": "SPBB5504", "n": "SPICY PANEER BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "SMM5240", "n": "SEV MURMURA Rs. 5/- 240 POUCH BAG"},
+            {"h": "ZTB5360", "n": "ZORDAAR TOOFAN Rs. 5/- 360 POUCH BAG"},
+            {"h": "ABB5240", "n": "ALOO BHUJIA Rs. 5/- 240 POUCH BAG"},
+            {"h": "BBB5240", "n": "BHUJIA Rs. 5/- 240 POUCH BAG"},
+            {"h": "BPB5240", "n": "BOONDI PUDINA Rs. 5/- 240 POUCH BAG"},
+            {"h": "CKNB5240", "n": "CHAKHNA Rs. 5/- 240 POUCH BAG"},
+            {"h": "CHJB5240", "n": "CHANA HING JEERA Rs. 5/- 240 POUCH BAG"},
+            {"h": "CPNB5240", "n": "CHILLI PEANUT Rs. 5/- 240 POUCH BAG"},
+            {"h": "DMB5240", "n": "DOUBLE MAZA Rs. 5/- 240 POUCH BAG"},
+            {"h": "KMB524", "n": "KHATTA MEETHA Rs. 5/- 240 POUCH BAG"},
+            {"h": "LMB5240", "n": "LITE MIX Rs. 5/- 240 POUCH BAG"},
+            {"h": "MCB5240", "n": "MATAR CHATPATI Rs. 5/- 240 POUCH BAG"},
+            {"h": "MDB5240", "n": "MOONG DAL Rs. 5/- 240 POUCH BAG"},
+            {"h": "MMB5240", "n": "MUMBAIYA MIX Rs. 5/- 240 POUCH BAG"},
+            {"h": "NMB5240", "n": "NAVRATAN MIX Rs. 5/- 240 POUCH BAG"},
+            {"h": "PBB5240", "n": "PANEER BHUJIA Rs. 5/- 240 POUCH BAG"},
+            {"h": "PTB5240", "n": "PANJABI TADKA Rs. 5/- 240 POUCH BAG"},
+            {"h": "SPB5240", "n": "SALTED PEANUT Rs. 5/- 240 POUCH BAG"},
+            {"h": "TNB5240", "n": "TASTY NUT Rs. 5/- 240 POUCH BAG"},
+            {"h": "ABB10260", "n": "ALOO BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "BBB10260", "n": "BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "BPB10260", "n": "BOONDI PUDINA Rs. 10/- 260 POUCH BAG"},
+            {"h": "BSB10260", "n": "BOONDI SALTED Rs. 10/- 260 POUCH BAG"},
+            {"h": "CHJB10260", "n": "CHANA HING JEERA Rs. 10/- 260 POUCH BAG"},
+            {"h": "CKNB10260", "n": "CHAKHNA Rs. 10/- 260 POUCH BAG"},
+            {"h": "CPB10260", "n": "CHILLI PEANUT Rs. 10/- 260 POUCH BAG"},
+            {"h": "HSMB10260", "n": "HOT SPICY MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "KMB10260", "n": "KHATTA MEETHA Rs. 10/- 260 POUCH BAG"},
+            {"h": "LMB10260", "n": "LITE MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "MCB10260", "n": "MATAR CHATPATI Rs. 10/- 260 POUCH BAG"},
+            {"h": "MDB10260", "n": "MOONG DAL Rs. 10/- 260 POUCH BAG"},
+            {"h": "MMB10260", "n": "MUMBAIYA MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "MSB1026", "n": "MALAI SEV Rs. 10/- 260 POUCH BAG"},
+            {"h": "NMB10260", "n": "NAVRATAN MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "PBB5004", "n": "PANEER BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "PRMB10260", "n": "PANCHRATTAN MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "PTB10260", "n": "PANJABI TADKA Rs. 10/- 260 POUCH BAG"},
+            {"h": "SPB10260", "n": "SALTED PEANUT Rs. 10/- 260 POUCH BAG"},
+            {"h": "TNB10260", "n": "TASTY NUT Rs. 10/- 260 POUCH BAG"},
+            {"h": "SPBB10260", "n": "SPICY PANEER BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "SEVM10260", "n": "SEV MIXTURE Rs. 10/- 260 POUCH BAG"},
+            {"h": "ZTB10260", "n": "ZORDAAR TOOFAN Rs. 10/- 260 POUCH BAG"},
+            {"h": "ABB5504IN", "n": "ALOO BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "BBB5504IN", "n": "BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "BPB5504IN", "n": "BOONDI PUDINA Rs. 5/- 504 POUCH BAG"},
+            {"h": "CKNB5504IN", "n": "CHAKHNA Rs. 5/- 504 POUCH BAG"},
+            {"h": "CHJB5504IN", "n": "CHANA HING JEERA Rs. 5/- 504 POUCH BAG"},
+            {"h": "CPMXB5306IN", "n": "CORN PEANUT MIXTURE Rs. 5/- 360 POUCH BAG"},
+            {"h": "CPB5504IN", "n": "CHILLI PEANUT Rs. 5/- 504 POUCH BAG"},
+            {"h": "DMB5504IN", "n": "DOUBLE MAZA Rs. 5/- 504 POUCH BAG"},
+            {"h": "HSMB5504IN", "n": "HOT SPICY MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "KMB5504IN", "n": "KHATTA MEETHA Rs. 5/- 504 POUCH BAG"},
+            {"h": "LMB5504IN", "n": "LITE MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "MCB5505IN", "n": "MATAR CHATPATI Rs. 5/- 504 POUCH BAG"},
+            {"h": "MDB5504IN", "n": "MOONG DAL Rs. 5/- 504 POUCH BAG"},
+            {"h": "MMB5504IN", "n": "MUMBAIYA MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "NCB5504IN", "n": "NUTI CRAKKER Rs. 5/- 504 POUCH BAG"},
+            {"h": "NMB5504IN", "n": "NAVRATAN MIX Rs. 5/- 504 POUCH BAG"},
+            {"h": "PBB5004IN", "n": "PANEER BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "PTB5504IN", "n": "PANJABI TADKA Rs. 5/- 504 POUCH BAG"},
+            {"h": "SPB5504IN", "n": "SALTED PEANUT Rs. 5/- 504 POUCH BAG"},
+            {"h": "SPBB5504IN", "n": "SPICY PANEER BHUJIA Rs. 5/- 504 POUCH BAG"},
+            {"h": "SMM5240IN", "n": "SEV MURMURA Rs. 5/- 240 POUCH BAG"},
+            {"h": "TNB5504IN", "n": "TASTY NUT Rs. 5/- 504 POUCH BAG"},
+            {"h": "ZT5360IN", "n": "ZORDAAR TOOFAN Rs. 5/- 504 POUCH BAG"},
+            {"h": "ABB10260IN", "n": "ALOO BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "BBB10260IN", "n": "BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "BPB10260IN", "n": "BOONDI PUDINA Rs. 10/- 260 POUCH BAG"},
+            {"h": "BSB10260IN", "n": "BOONDI SALTED Rs. 10/- 260 POUCH BAG"},
+            {"h": "CHJB10260IN", "n": "CHANA HING JEERA Rs. 10/- 260 POUCH BAG"},
+            {"h": "CKNB10260IN", "n": "CHAKHNA Rs. 10/- 260 POUCH BAG"},
+            {"h": "CPB10260IN", "n": "CHILLI PEANUT Rs. 10/- 260 POUCH BAG"},
+            {"h": "HSMB10260IN", "n": "HOT SPICY MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "KMB10260IN", "n": "KHATTA MEETHA Rs. 10/- 260 POUCH BAG"},
+            {"h": "LMB10260IN", "n": "LITE MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "MCB10260IN", "n": "MATAR CHATPATI Rs. 10/- 260 POUCH BAG"},
+            {"h": "MDB10260IN", "n": "MOONG DAL Rs. 10/- 260 POUCH BAG"},
+            {"h": "MMB10260IN", "n": "MUMBAIYA MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "MSB1026IN", "n": "MALAI SEV Rs. 10/- 260 POUCH BAG"},
+            {"h": "NMB10260IN", "n": "NAVRATAN MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "PBB5004IN", "n": "PANEER BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "PRMB10260IN", "n": "PANCHRATTAN MIX Rs. 10/- 260 POUCH BAG"},
+            {"h": "PTB10260IN", "n": "PANJABI TADKA Rs. 10/- 260 POUCH BAG"},
+            {"h": "SPB10260IN", "n": "SALTED PEANUT Rs. 10/- 260 POUCH BAG"},
+            {"h": "SPBB10260IN", "n": "SPICY PANEER BHUJIA Rs. 10/- 260 POUCH BAG"},
+            {"h": "TNB10260IN", "n": "TASTY NUT Rs. 10/- 260 POUCH BAG"},
+            {"h": "LM3020110", "n": "LITE MIX Rs. 30/- 100 gm 20 POUCH"},
+            {"h": "CORN3060", "n": "CORNFLAKES Rs. 30/- 60 POUCH"},
+            {"h": "KMX3060", "n": "KAJU MIX Rs. 30/- 60 POUCH"},
+            {"h": "PB3060", "n": "PANEER BHUJIA Rs. 30/- 60 POUCH"},
+            {"h": "3DB5168", "n": "3D TWISTER Rs. 5/- 168 POUCH BAG"},
+            {"h": "3DB572", "n": "3D TWISTER Rs. 5/- 72 POUCH BAG"},
+            {"h": "3DC5168", "n": "3D TWISTER Rs. 5/- 168 POUCH BAG"},
+            {"h": "JSB5168", "n": "JUNGLE SAFARI Rs. 5/- 168 POUCH BAG"},
+            {"h": "JSB572", "n": "JUNGLE SAFARI Rs. 5/- 72 POUCH BAG"},
+            {"h": "JSC5168", "n": "JUNGLE SAFARI Rs. 5/- 168 POUCH SG"},
+            {"h": "MKB5168", "n": "MOON KATORI Rs. 5/- 168 POUCH BAG"},
+            {"h": "MKB572", "n": "MOON KATORI Rs. 5/- 72 POUCH BAG"},
+            {"h": "MKC5168", "n": "MOON KATORI Rs. 5/- 168 POUCH BOX"},
+            {"h": "NDB572", "n": "NOODLES Rs. 5/- 72 POUCH BAG"},
+            {"h": "NDB5168", "n": "NOODLES Rs. 5/- 168 POUCH BAG"},
+            {"h": "NDC5168", "n": "NOODLES Rs. 5/- 168 POUCH BOX"},
+            {"h": "PPB5168", "n": "PASTA PARTY Rs. 5/- 168 POUCH BAG"},
+            {"h": "PPB572", "n": "PASTA PARTY Rs. 5/- 72 POUCH BAG"},
+            {"h": "SCRB5168", "n": "SOCCER Rs. 5/- 168 POUCH BAG"},
+            {"h": "SCRC5168", "n": "SOCCER Rs. 5/- 168 POUCH BOX"},
+            {"h": "JPB5168", "n": "JEERA PAPAD Rs. 5/- 168 POUCH BAG"},
+            {"h": "JPC5168", "n": "JEERA PAPAD Rs. 5/- 168 POUCH BOX"},
+            {"h": "ABCDC5168", "n": "ABCD SNACKS Rs. 5/- 168 POUCH BAG"},
+            {"h": "ABCDB5168", "n": "ABCD SNACKS Rs. 5/- 168 POUCH BOX"},
+            {"h": "SPC5168", "n": "SALTED PIPE Rs. 5/- 168 POUCH BAG"},
+            {"h": "SPB5168", "n": "SALTED PIPE Rs. 5/- 168 POUCH BOX"},
+            {"h": "DCB5168", "n": "DAL CHAWAL Rs. 5/- 168 POUCH BAG"},
+            {"h": "DCC5168", "n": "DAL CHAWAL Rs. 5/- 168 POUCH BOX"},
+            {"h": "DCP572", "n": "DAL CHAWAL Rs. 5/- 72 POUCH POLY"},
+            {"h": "DCB5182", "n": "DAL CHAWAL Rs. 5/- 182 POUCH BAG"},
+            {"h": "BSB5168", "n": "BHOOT SNACKS Rs. 5/- 168 POUCH BAG"},
+            {"h": "BSC5168", "n": "BHOOT SNACKS Rs. 5/- 168 POUCH BOX"},
+            {"h": "BSB5182", "n": "BHOOT SNACKS Rs. 5/- 182 POUCH BAG"},
+            {"h": "BSC5182", "n": "BHOOT SNACKS Rs. 5/- 182 POUCH BOX"},
+            {"h": "BSP572", "n": "BHOOT SNACKS Rs. 5/- 72 POUCH POLY"},
+            {"h": "CCB5168", "n": "CHILLI CHOWMEIN Rs. 5/- 168 POUCH BAG"},
+            {"h": "CCC5168", "n": "CHILLI CHOWMEIN Rs. 5/- 168 POUCH BOX"},
+            {"h": "CCP572", "n": "CHILLI CHOWMEIN Rs. 5/- 72 POUCH POLY"},
+            {"h": "CCB5182", "n": "CHILLI CHOWMEIN Rs. 5/- 182 POUCH BAG"},
+            {"h": "CCC5182", "n": "CHILLI CHOWMEIN Rs. 5/- 182 POUCH BOX"},
+            {"h": "PPB5182", "n": "PASTA PARTY Rs. 5/- 182 POUCH BAG"},
+            {"h": "NDB5182", "n": "NOODLES Rs. 5/- 182 POUCH BAG"},
+            {"h": "MKB5182", "n": "MOON KATORI Rs. 5/- 182 POUCH BAG"},
+            {"h": "JPB5182", "n": "JEERA PAPAD Rs. 5/- 182 POUCH BAG"},
+            {"h": "JSB5182", "n": "JUNGLE SAFARI Rs. 5/- 182 POUCH BAG"},
+            {"h": "3DB5182", "n": "3D TWISTER Rs. 5/- 182 POUCH BAG"},
+            {"h": "SPB5182", "n": "SALTED PEANUT Rs. 5/- 182 POUCH BAG"},
+            {"h": "KTTB5182", "n": "KRITOZ TOMATO Rs. 5/- 182 POUCH BAG"},
+            {"h": "SCRB5182", "n": "SOCCER Rs. 5/- 182 POUCH BAG"},
+            {"h": "KCMB5182", "n": "KRITOZ CHATPATA MASALA Rs. 5/- 182 POUCH BAG"},
+            {"h": "PPC5182", "n": "PASTA PARTY Rs. 5/- 182 POUCH BOX"},
+            {"h": "JSC5182", "n": "JUNGLE SAFARI Rs. 5/- 182 POUCH BOX"},
+            {"h": "NDC5182", "n": "NOODLES Rs. 5/- 182 POUCH BOX"},
+            {"h": "3DC5812", "n": "3D TWISTER Rs. 5/- 182 POUCH BOX"},
+            {"h": "SCRC5182", "n": "SOCCER Rs. 5/- 182 POUCH BOX"},
+            {"h": "MKC5182", "n": "MOON KATORI Rs. 5/- 182 POUCH BOX"},
+            {"h": "ABCDC5182", "n": "ABCD SNACKS Rs. 5/- 182 POUCH BOX"},
+            {"h": "JPC5182", "n": "JEERA PAPAD Rs. 5/- 182 POUCH BOX"},
+            {"h": "KRMC10144", "n": "KRUNCHY MUNCHIES Rs. 10/- 144 POUCH BOX"},
+            {"h": "KRMC5182", "n": "KRUNCHY MUNCHIES Rs. 5/- 182 POUCH BOX"},
+            {"h": "3DP572", "n": "3D TWISTER Rs. 5/- 72 POUCH POLY"},
+            {"h": "JSP572", "n": "JUNGLE SAFARI Rs. 5/- 72 POUCH POLY"},
+            {"h": "MKP572", "n": "MOON KATORI Rs. 5/- 72 POUCH POLY"},
+            {"h": "NDP572", "n": "NOODLES Rs. 5/- 72 POUCH POLY"},
+            {"h": "PPP572", "n": "PASTA PARTY Rs. 5/- 72 POUCH POLY"},
+            {"h": "JPP572", "n": "JEERA PAPAD Rs. 5/- 72 POUCH POLY"},
+            {"h": "SPP572", "n": "SALTED PIPE Rs. 5/- 72 POUCH POLY"},
+            {"h": "SCRP572", "n": "SOCCER Rs. 5/- 72 POUCH POLY"},
+            {"h": "ABCDP572", "n": "ABCD SNACKS Rs. 5/- 72 POUCH POLY"},
+            {"h": "KTTP572", "n": "KRITOZ TOMATO TWIST Rs. 5/- 72 POUCH POLY"},
+            {"h": "KCMP572", "n": "KRITOZ CHATPATA MASALA Rs. 5/- 72 POUCH POLY"},
+            {"h": "KRMC5156", "n": "KRUNCHY MUNCHIES Rs. 5/- 156 POUCH POLY"},
+            {"h": "SPCC5168", "n": "SATMOLA POTATO CHIPS (PUDINA) Rs. 5/- 168 POUCH BOX"},
+            {"h": "STTC5168", "n": "SATMOLA POTATO CHIPS (TANGY TOMATO) Rs. 5/- 168 POUCH BOX"},
+            {"h": "SHMC5168", "n": "SATMOLA POTATO CHIPS (HOT MASALA) Rs. 5/- 168 POUCH BOX"},
+            {"h": "SSSC5168", "n": "SATMOLA POTATO CHIPS(SALTED) Rs. 5/- 168 POUCH BOX"},
+            {"h": "SICOC5168", "n": "SATMOLA POTATO CHIPS (CREAM -N-ONION) Rs. 5/- 168 POUCH BOX"},
+            {"h": "KRMC10156", "n": "KRUNCHY MUNCHIES Rs. 10/- 156 POUCH BOX"},
+            {"h": "KCMC5168", "n": "KRITOZ CHATPATA MASALA Rs. 5/- 168 POUCH BOX"},
+            {"h": "KTTC5168", "n": "KRITOZ TOMATO TWIST Rs. 5/- 168 POUCH BOX"},
+            {"h": "SSSC5182", "n": "SATMOLA POTATO CHIPS (SALTED) Rs. 5/- 182 POUCH BOX"},
+            {"h": "STTC5182", "n": "SATMOLA POTATO CHIPS (TANGY TOMATO) Rs. 5/- 182 POUCH BOX"},
+            {"h": "SPCC5182", "n": "SATMOLA POTATO CHIPS (PUDINA) Rs. 5/- 182 POUCH BOX"},
+            {"h": "SICOC5182", "n": "SATMOLA POTATO CHIPS (CREAM-N-ONION) Rs. 5/- 182 POUCH BOX"},
+            {"h": "KTTC55182", "n": "KRITOZ TOMATO TWIST Rs. 5/- 182 POUCH BOX"},
+            {"h": "SHMC5182", "n": "SATMOLA POTATO CHIPS (HOT MASALA) Rs. 5/- 182 POUCH BOX"},
+            {"h": "STTC10120", "n": "SATMOLA POTATO CHIPS (TANGY TOMATO) Rs. 10/- 120 POUCH BOX"},
+            {"h": "SHMC10120", "n": "SATMOLA POTATO CHIPS (HOT MASALA) Rs. 10/- 120 POUCH BOX"},
+            {"h": "SSSC10120", "n": "SATMOLA POTATO CHIPS (SALTED) Rs. 10/- 120 POUCH BOX"},
+            {"h": "SICOC10120", "n": "SATMOLA POTATO CHIPS (CREAM-N-ONION) Rs. 10/- 120 POUCH BOX"},
+            {"h": "SPCC10120", "n": "SATMOLA POTATO CHIPS (PUDINA) Rs. 10/- 120 POUCH BOX"},
+            {"h": "SSSC15120", "n": "SATMOLA POTATO CHIPS (SALTED) Rs. 15/- 120 POUCH BOX"},
+            {"h": "STTC15120", "n": "SATMOLA POTATO CHIPS (TANGY TOMATO) Rs. 15/- 120 POUCH BOX"},
+            {"h": "SHMC15120", "n": "SATMOLA POTATO CHIPS (HOT MASALA) Rs. 15/- 120 POUCH BOX"},
+            {"h": "SICOC15120", "n": "SATMOLA POTATO CHIPS (CREAM-N-ONION) Rs. 15/- 120 POUCH BOX"},
+            {"h": "SPCC15120", "n": "SATMOLA POTATO CHIPS (PUDINA) Rs. 15/- 120 POUCH BOX"},
+            {"h": "STTCP572", "n": "SATMOLA POTATO CHIPS (TANGY TOMATO) Rs. 5/- 72 POUCH POLY"},
+            {"h": "SHMCP572", "n": "SATMOLA POTATO CHIPS (HOT MASALA) Rs. 5/- 72 POUCH POLY"},
+            {"h": "SSSCP572", "n": "SATMOLA POTATO CHIPS (SALTED) Rs. 5/- 72 POUCH POLY"},
+            {"h": "SICOCP572", "n": "SATMOLA POTATO CHIPS (CREAM -N-ONION) Rs. 5/- 72 POUCH POLY"},
+            {"h": "SPCP572", "n": "SATMOLA POTATO CHIPS (PUDINA) Rs. 5/- 72 POUCH POLY"},
+            {"h": "KRMP572", "n": "KRUNCHY MUNCHIES Rs. 5/- 72 POUCH POLY"},
+            {"h": "SSSC5196", "n": "SATMOLA POTATO CHIPS (SALTED) Rs. 5/- 196 POUCH BOX"},
+            {"h": "STTC5196", "n": "SATMOLA POTATO CHIPS (TANGY TOMATO) Rs. 5/- 196 POUCH BOX"},
+            {"h": "SHMC5196", "n": "SATMOLA POTATO CHIPS (HOT MASALA) Rs. 5/- 196 POUCH BOX"},
+            {"h": "SICOC5196", "n": "SATMOLA POTATO CHIPS (CREAM -N-ONION) Rs. 5/- 196 POUCH BOX"},
+            {"h": "AB20085", "n": "SATMOLA ALOO BHUJIA Rs. 85/- 200 gm LOOSE"},
+            {"h": "AB380160", "n": "SATMOLA ALOO BHUJIA Rs. 160/- 380 gm LOOSE"},
+            {"h": "BB17085", "n": "SATMOLA BIKANERI BHHUJIA Rs. 85/- 170 gm LOOSE"},
+            {"h": "BB350160", "n": "SATMOLA BIKANERI BHHUJIA Rs. 160/- 380 gm LOOSE"},
+            {"h": "BM17085", "n": "SATMOLA BOONDI MASALA Rs. 85/- 170 gm LOOSE"},
+            {"h": "BPMX400190", "n": "SATMOLA BHEL PURI MIXTURE Rs. 190/- 400 gm LOOSE"},
+            {"h": "BS17085", "n": "SATMOLA BOONDI SALTED Rs. 85/- 170 gm LOOSE"},
+            {"h": "CF14085", "n": "SATMOLA CORNFLAKES Rs. 85/- 140 gm LOOSE"},
+            {"h": "CF300190", "n": "SATMOLA CORNFLAKES Rs. 190/- 300 gm LOOSE"},
+            {"h": "CHJ17085", "n": "SATMOLA CHANA HING JEERA Rs. 85/- 170 gm LOOSE"},
+            {"h": "CPMX18085", "n": "SATMOLA CORN PEANUT MIXTURE Rs. 85/- 180 gm LOOSE"},
+            {"h": "CPMX380160", "n": "SATMOLA CORN PEANUT MIXTURE Rs. 160/- 380 gm LOOSE"},
+            {"h": "HPMX350160", "n": "SATMOLA HING PAPDI MIXTURE Rs. 160/- 350 gm LOOSE"},
+            {"h": "HSMX160380", "n": "SATMOLA HOT SPICY MIXTURE Rs. 160/- 380 gm LOOSE"},
+            {"h": "HSMX85180", "n": "SATMOLA HOT SPICY MIXTURE Rs. 85/- 180 gm LOOSE"},
+            {"h": "KM18085", "n": "SATMOLA KHATTA MEETHA Rs. 85/- 180 gm LOOSE"},
+            {"h": "KM380160", "n": "SATMOLA KHATTA MEETHA Rs. 160/- 380 gm LOOSE"},
+            {"h": "KMX200160", "n": "SATMOLA KAJU MIX Rs. 160/- 200 gm LOOSE"},
+            {"h": "LM15070", "n": "SATMOLA LITE MIX Rs. 70/- 150 gm LOOSE"},
+            {"h": "MD15085", "n": "SATMOLA MOONG DAL Rs. 85/- 150 gm LOOSE"},
+            {"h": "MD300160", "n": "SATMOLA MOONG DAL Rs. 160/- 300 gm LOOSE"},
+            {"h": "MM380160", "n": "SATMOLA MUMBAIYA MIX Rs. 160/- 380 gm LOOSE"},
+            {"h": "NM18085", "n": "SATMOLA NAVRATTAN MIX Rs. 85/- 180 gm LOOSE"},
+            {"h": "NM380160", "n": "SATMOLA NAVRATTAN MIX Rs. 160/- 380 gm LOOSE"},
+            {"h": "PBD13085", "n": "SATMOLA PANEER BHUJIA Rs. 85/- 130 gm LOOSE"},
+            {"h": "PBD300190", "n": "SATMOLA PANEER BHUJIA Rs. 190/- 300 gm LOOSE"},
+            {"h": "PR200160", "n": "SATMOLA PANCHRATAN Rs. 160/- 200 gm LOOSE"},
+            {"h": "SMX15085", "n": "SATMOLA SHAHI MIX Rs. 85/- 150 gm LOOSE"},
+            {"h": "SMX300190", "n": "SATMOLA SHAHI MIX Rs. 190/- 300 gm LOOSE"},
+            {"h": "SP15085", "n": "SATMOLA SALTED PEANUT Rs. 85/- 150 gm LOOSE"},
+            {"h": "SPB300190", "n": "SATMOLA SPICY PANNER BHUJIA Rs. 190/- 300 gm LOOSE"},
+            {"h": "TMM16085", "n": "SATMOLA TIKHA MITHA MIXTURE Rs. 85/- 160 gm LOOSE"},
+            {"h": "TMM300160", "n": "SATMOLA TIKHA MITHA MIXTURE Rs. 160/- 300 gm LOOSE"},
+            {"h": "TN18085", "n": "SATMOLA TASTY NUT Rs. 85/- 180 gm LOOSE"},
+            {"h": "TN350160", "n": "SATMOLA TASTY NUT Rs. 160/- 350 gm LOOSE"},
+            {"h": "KM7225048CPC", "n": "KHATTA MEETHA Rs. 72/- 200gm + 50gm EXTRA 48 POUCH"},
+            {"h": "BB7225048CPC", "n": "BIKANERI BHUJIA Rs. 72/- 200gm + 50gm EXTRA 48 POUCH"},
+            {"h": "AB7225048CPC", "n": "ALOO BHUJIA Rs. 72/- 200gm + 50gm EXTRA 48 POUCH"},
+            {"h": "NM7225048CPC", "n": "NAVRATAN MIX Rs. 72/- 200gm + 50gm EXTRA 48 POUCH"},
+            {"h": "SMX6620048CPC", "n": "SHAHI MIX Rs. 66/- 200 gm 48 POUCH"},
+            {"h": "SP6620048CPC", "n": "SALTED PEANUT Rs. 66/- 200 gm 48 POUCH"},
+            {"h": "TN7223048CPC", "n": "TASTY NUT Rs. 72/- 180gm + 50gm EXTRA 48 POUCH"},
+            {"h": "MD7223048CPC", "n": "MOONG DAAL Rs. 72/- 180gm + 50gm EXTRA 48 POUCH"},
+            {"h": "LM2842CPC", "n": "LITE MIX Rs. 28/- 100 gm 42 POUCH"},
+            {"h": "CFM7220048CPC", "n": "CORNFLAKES Rs. 72/- 200 gm 48 POUCH"},
+            {"h": "PB7520048CPC", "n": "PANEER BHUJIA Rs. 75/- 200 gm 48 POUCH"},
+            {"h": "KMX7520048CPC", "n": "KAJU MIX Rs. 75/- 200 gm 48 POUCH"},
+            {"h": "CHJ7225048CPC", "n": "CHANA HING JEERA Rs. 72/- 200gm + 50gm EXTRA 48 POUCH"},
+            {"h": "PB19045030CPC", "n": "PANEER BHUJIA Rs. 190/- 400gm + 50gm EXTRA 30 POUCH"},
+            {"h": "AB14245030CPC", "n": "ALOO BHUJIA Rs. 142/- 400gm + 50gm EXTRA 30 POUCH"},
+            {"h": "NM14245030CPC", "n": "NAVRATAN MIX Rs. 142/- 400gm + 50gm EXTRA 30 POUCH"},
+            {"h": "CFM45019020CPC", "n": "CORNFLAKES MIX Rs. 190/- 400gm + 50gm EXTRA 20 POUCH"},
+            {"h": "BB45014230CPC", "n": "BIKANERI BHUJIA Rs. 142/- 400gm + 50gm EXTRA 30 POUCH"},
+            {"h": "MD14245030CPC", "n": "MOONG DAL Rs. 142/- 400gm + 50gm EXTRA 30 POUCH"},
+            {"h": "KPB20011548CPC", "n": "KESAR PANEER BHUJIA Rs. 115/- 200 gm 48 POUCH"},
+            {"h": "KPB20011548CSD", "n": "SATMOLA KESAR PANEER BHUJIA Rs. 115/- 200 gm 48 POUCH"},
+            {"h": "ABB15260", "n": "ALOO BHUJIA Rs. 15/- 260 POUCH BAG"},
+            {"h": "BBB15260", "n": "BHUJIA Rs. 15/- 260 POUCH BAG"},
+            {"h": "CHJB15260", "n": "CHANA HING JEERA Rs. 15/- 260 POUCH BAG"},
+            {"h": "CKNB15260", "n": "CHAKHNA Rs. 15/- 260 POUCH BAG"},
+            {"h": "CPB15260", "n": "CHILLI PEANUT Rs. 15/- 260 POUCH BAG"},
+            {"h": "KMB15260", "n": "KHATTA MEETHA Rs. 15/- 260 POUCH BAG"},
+            {"h": "LMB15260", "n": "LITE MIX Rs. 15/- 260 POUCH BAG"},
+            {"h": "MCB15260", "n": "MATAR CHATPATI Rs. 15/- 260 POUCH BAG"},
+            {"h": "MDB15260", "n": "MOONG DAL Rs. 15/- 260 POUCH BAG"},
+            {"h": "NMB15260", "n": "NAVRATAN MIX Rs. 15/- 260 POUCH BAG"},
+            {"h": "PTB15260", "n": "PANJABI TADKA Rs. 15/- 260 POUCH BAG"},
+            {"h": "PBB15260", "n": "PANEER BHUJIA Rs. 15/- 260 POUCH BAG"},
+            {"h": "PRMB15260", "n": "PANCHRATTAN MIX Rs. 15/- 260 POUCH BAG"},
+            {"h": "SPB15260", "n": "SALTED PEANUT Rs. 15/- 260 POUCH BAG"},
+            {"h": "TNB15260", "n": "TASTY NUT Rs. 15/- 260 POUCH BAG"},
+            {"h": "HSMB15260", "n": "HOT SPICY MIX Rs. 15/- 260 POUCH BAG"},
+            {"h": "ABC2060", "n": "ALOO BHUJIA Rs. 20/- 60 POUCH BOX"},
+            {"h": "BBC2060", "n": "BIKANERI BHUJIA Rs. 20/- 60 POUCH BOX"},
+            {"h": "BJC2060", "n": "BOONDI JEERA Rs. 20/- 60 POUCH BOX"},
+            {"h": "BMC2060", "n": "BOONDI MASALA Rs. 20/- 60 POUCH BOX"},
+            {"h": "BPC2060", "n": "BOONDI PUDINA Rs. 20/- 60 POUCH BOX"},
+            {"h": "BSC2060", "n": "BOONDI SALTED Rs. 20/- 60 POUCH BOX"},
+            {"h": "KMC2060", "n": "KHATTA MEETHA Rs. 20/- 60 POUCH BOX"},
+            {"h": "MDC2060", "n": "MOONG DAL Rs. 20/- 60 POUCH BOX"},
+            {"h": "MSC2060", "n": "MALAI SEV Rs. 20/- 60 POUCH BOX"},
+            {"h": "PBC2060", "n": "PANEER BHUJIA Rs. 20/- 60 POUCH BOX"},
+            {"h": "TMC2060", "n": "TIKHA MEETHA Rs. 20/- 60 POUCH BOX"},
+            {"h": "HSMXC2060", "n": "HOT SPICY MIX Rs. 20/- 60 POUCH BOX"},
+            {"h": "NMC2060", "n": "NAVRATAN MIX Rs. 20/- 60 POUCH BOX"},
+            {"h": "SMX2060", "n": "SHAHI MIX Rs. 20/- 60 POUCH BOX"},
+            {"h": "SP2060", "n": "SALTED PEANUT Rs. 20/- 60 POUCH BOX"},
+            {"h": "TN2060", "n": "TASTY NUT Rs. 20/- 60 POUCH BOX"},
+            {"h": "SFGABGP (Rs 25)", "n": "ALOO BHUJIA Rs. 25/-"},
+            {"h": "SFGCFGP (Rs 30)", "n": "CORNFLAKES Rs. 30/-"},
+            {"h": "SFGMXGP (Rs 35)", "n": "CORN PEANUT MIX Rs. 35/-"},
+            {"h": "SFGMXGP (Rs 50)", "n": "CORN PEANUT MIX Rs. 50/-"},
+            {"h": "SFGCKNGP (Rs 5)", "n": "CHAKHNA Rs. 5/-"},
+            {"h": "SFGHSMGP (Rs 25)", "n": "HOT SPICY MIX Rs. 25/-"},
+            {"h": "SFGHSMGP (Rs 50)", "n": "HOT SPICY MIX Rs. 50/-"},
+            {"h": "SFGKJMGP (Rs 50)", "n": "KAJU MIX Rs. 50/-"},
+            {"h": "SFGKMGP (Rs 25)", "n": "KHATTA MEETHA Rs. 25/-"},
+            {"h": "SFGKMGP (Rs 30)", "n": "KHATTA MEETHA Rs. 30/-"},
+            {"h": "SFGKMGP (Rs 50)", "n": "KHATTA MEETHA Rs. 50/-"},
+            {"h": "SFGKPB100 (Rs 70)", "n": "KESAR PANEER BHUJIA Rs. 70/-"},
+            {"h": "SFGNMGP (Rs 10)", "n": "NAVRATAN MIX Rs. 10/-"},
+            {"h": "SFGNMGP (Rs 25)", "n": "NAVRATAN MIX Rs. 25/-"},
+            {"h": "SFGPBGP (Rs 10)", "n": "PANEER BHUJIA Rs. 10/-"},
+            {"h": "SFGPBGP (Rs 30)", "n": "PANEER BHUJIA Rs. 30/-"},
+            {"h": "SFGPBGP (Rs 15)", "n": "PANEER BHUJIA Rs. 15/- 50 g"},
+            {"h": "SFGPBGP (Rs 50)", "n": "PANEER BHUJIA Rs. 50/-"},
+            {"h": "SFGSHMGP (Rs 25)", "n": "SHAHI MIX Rs. 25/-"},
+            {"h": "SFGSHMGP120G", "n": "SHAHI MIX 120 gm"},
+            {"h": "SFGSHMGP (Rs 60)", "n": "SHAHI MIX Rs. 60/- 150 gm"},
+            {"h": "SFGSHMGP (Rs 20)", "n": "SHAHI MIX Rs. 20/- 50 gm"},
+            {"h": "SFGTMGP (Rs 50)", "n": "TIKHA MEETHA Rs. 50/- 150 gm"},
+            {"h": "SFGTMGP (Rs 25)", "n": "TIKHA MEETHA Rs. 25/-"},
+            {"h": "SFGTNGP (Rs 50)", "n": "TASTY NUT Rs. 50/-"},
+            {"h": "BSB2090", "n": "BOONDI SALTED Rs. 20/- 90 POUCH BAG"},
+            {"h": "LMX2060", "n": "LITE MIX Rs. 20/- 60 POUCH BAG"},
+            {"h": "CPMXB2060", "n": "CORN PEANUT MIXTURE Rs. 20/- 60 POUCH BAG"},
+            {"h": "SMX2080", "n": "SHAHI MIX Rs. 20/- 80 POUCH BAG"},
+            {"h": "CFMXB2080", "n": "CORNFLAKES MIXTURE Rs. 20/- 80 POUCH BAG"},
+            {"h": "PBB2080", "n": "PANEER BHUJIA Rs. 20/- 80 POUCH BAG"},
+            {"h": "ABB2090", "n": "ALOO BHUJIA Rs. 20/- 90 POUCH BAG"},
+            {"h": "BBB2090", "n": "BIKANERI BHUJIA Rs. 20/- 90 POUCH BAG"},
+            {"h": "HSMXB2090", "n": "HOT SPICY MIXTURE Rs. 20/- 90 POUCH BAG"},
+            {"h": "KMB2090", "n": "KHATTA MEETHA Rs. 20/- 90 POUCH BAG"},
+            {"h": "MDB2090", "n": "MOONG DAL Rs. 20/- 90 POUCH BAG"},
+            {"h": "MSB2090", "n": "MALAI SEV Rs. 20/- 90 POUCH BAG"},
+            {"h": "NMXB2090", "n": "NAVRATAN MIX Rs. 20/- 90 POUCH BAG"},
+            {"h": "SPB2090", "n": "SALTED PEANUT Rs. 20/- 90 POUCH BAG"},
+            {"h": "TMB2090", "n": "TIKHA MEETHA Rs. 20/- 90 POUCH BAG"},
+            {"h": "TNB2090", "n": "TASTY NUT Rs. 20/- 90 POUCH BAG"},
+            {"h": "CHJB2090", "n": "CHANA HING JEERA Rs. 20/- 90 POUCH BAG"},
+            {"h": "LMX2060IN", "n": "LITE MIX Rs. 20/- 60 POUCH BAG"},
+            {"h": "BPB2090IN", "n": "BOONDI PUDINA Rs. 20/- 60 POUCH BAG"},
+            {"h": "CPMXB2060IN", "n": "CORN PEANUT MIXTURE Rs. 20/- 60 POUCH BAG"},
+            {"h": "SMX2080IN", "n": "SHAHI MIX Rs. 20/- 80 POUCH BAG"},
+            {"h": "CFMXB2080IN", "n": "CORNFLAKES MIXTURE Rs. 20/- 80 POUCH BAG"},
+            {"h": "PBB2080IN", "n": "PANEER BHUJIA Rs. 20/- 80 POUCH BAG"},
+            {"h": "ABB2090IN", "n": "ALOO BHUJIA Rs. 20/- 90 POUCH BAG"},
+            {"h": "BBB2090IN", "n": "BIKANERI BHUJIA Rs. 20/- 90 POUCH BAG"},
+            {"h": "BSB2090IN", "n": "BOONDI SALTED Rs. 20/- 90 POUCH BAG"},
+            {"h": "HSMXB2090IN", "n": "HOT SPICY MIXTURE Rs. 20/- 90 POUCH BAG"},
+            {"h": "KMB2090IN", "n": "KHATTA MEETHA Rs. 20/- 90 POUCH BAG"},
+            {"h": "MDB2090IN", "n": "MOONG DAL Rs. 20/- 90 POUCH BAG"},
+            {"h": "MSB2090IN", "n": "MALAI SEV Rs. 20/- 90 POUCH BAG"},
+            {"h": "NMXB2090IN", "n": "NAVRATAN MIX Rs. 20/- 90 POUCH BAG"},
+            {"h": "SPB2090IN", "n": "SALTED PEANUT Rs. 20/- 90 POUCH BAG"},
+            {"h": "TMB2090IN", "n": "TIKHA MEETHA Rs. 20/- 90 POUCH BAG"},
+            {"h": "TNB2090IN", "n": "TASTY NUT Rs. 20/- 90 POUCH BAG"},
+            {"h": "CHJB2090IN", "n": "CHANA HING JEERA Rs. 20/- 90 POUCH BAG"},
+            {"h": "ABC2060IN", "n": "ALOO BHUJIA Rs. 20/- 60 POUCH BOX"},
+            {"h": "BBC2060IN", "n": "BIKANERI BHUJIA Rs. 20/- 60 POUCH BOX"},
+            {"h": "HSMXBC2060IN", "n": "HOT SPICY MIXTURE Rs. 20/- 60 POUCH BOX"},
+            {"h": "KMC2060IN", "n": "KHATTA MEETHA Rs. 20/- 60 POUCH BOX"},
+            {"h": "MDC2060IN", "n": "MOONG DAL Rs. 20/- 60 POUCH BOX"},
+            {"h": "MS2060IN", "n": "MALAI SEV Rs. 20/- 60 POUCH BOX"},
+            {"h": "NMXC2060IN", "n": "NAVRATAN MIX Rs. 20/- 60 POUCH BOX"},
+            {"h": "PBC2060IN", "n": "PANEER BHUJIA Rs. 20/- 60 POUCH BOX"},
+            {"h": "SMXC2060IN", "n": "SHAHI MIX Rs. 20/- 60 POUCH BOX"},
+            {"h": "SPC2060IN", "n": "SALTED PEANUT Rs. 20/- 60 POUCH BOX"},
+            {"h": "TMC2060IN", "n": "TIKHA MEETHA Rs. 20/- 60 POUCH BOX"},
+            {"h": "TNC2060IN", "n": "TASTY NUT Rs. 20/- 60 POUCH BOX"},
+            {"h": "ABC8032GT", "n": "SATMOLA ALOO BHUJIA Rs. 80/- 32 POUCH BAG"},
+            {"h": "HSMXC8032GT", "n": "SATMOLA HOT SPICY MIXTURE Rs. 80/- 32 POUCH BAG"},
+            {"h": "KMC8032GT", "n": "SATMOLA KHATTA MEETHA Rs. 80/- 32 POUCH BAG"},
+            {"h": "NMXC8032GT", "n": "SATMOLA NAVRATTAN MIX Rs. 80/- 32 POUCH BAG"},
+            {"h": "TNC8032GT", "n": "SATMOLA TASTY NUT Rs. 80/- 32 POUCH BAG"},
+            {"h": "CPMXC8032GT", "n": "SATMOLA CORN PEANUT MIXTURE Rs. 80/- 32 POUCH BAG"},
+            {"h": "BBC8032GT", "n": "SATMOLA BIKANERI BHUJIA Rs. 80/- 32 POUCH BAG"},
+            {"h": "BMC8032GT", "n": "SATMOLA BOONDI MASALA Rs. 80/- 32 POUCH BAG"},
+            {"h": "BSC8032GT", "n": "SATMOLA BOONDI SALTED Rs. 80/- 32 POUCH BAG"},
+            {"h": "BPC8032GT", "n": "SATMOLA BOONDI PUDINA Rs. 80/- 32 POUCH BAG"},
+            {"h": "BJC8032GT", "n": "SATMOLA BOONDI JEERA Rs. 80/- 32 POUCH BAG"},
+            {"h": "CHJC8032GT", "n": "SATMOLA CHANA HING JEERA Rs. 80/- 32 POUCH BAG"},
+            {"h": "MSC8032GT", "n": "SATMOLA MALAI SEV Rs. 80/- 32 POUCH BAG"},
+            {"h": "SPC8032GT", "n": "SATMOLA SALTED PEANUT Rs. 80/- 32 POUCH BAG"},
+            {"h": "TMMXC9032GT", "n": "SATMOLA TIKHA MEETHA MIXTURE Rs. 90/- 32 POUCH BAG"},
+            {"h": "MDC9032GT", "n": "SATMOLA MOONG DAL Rs. 90/- 32 POUCH BAG"},
+            {"h": "CFMXC9032GT", "n": "SATMOLA CORNFLAKES MIXTURE Rs. 90/- 32 POUCH BAG"},
+            {"h": "SMXC9032GT", "n": "SATMOLA SHAHI MIX Rs. 90/- 32 POUCH BAG"},
+            {"h": "PBC9032GT", "n": "SATMOLA PANEER BHUJIA Rs. 90/- 32 POUCH BAG"},
+            {"h": "KMXC032GT", "n": "SATMOLA KAJU MIXTURE Rs. 90/- 32 POUCH BAG"},
+            {"h": "KPBC9032GT", "n": "SATMOLA KESAR PANEER BHUJIA Rs. 90/- 32 POUCH BAG"},
+            {"h": "MDC17020GT", "n": "SATMOLA MOONG DAL Rs. 170/- 20 POUCH BAG"},
+            {"h": "BBC17020GT", "n": "SATMOLA BIKANERI BHUJIA Rs. 170/- 20 POUCH BAG"},
+            {"h": "MMX17020GT", "n": "SATMOLA MUMBAIYA MIX Rs. 170/- 20 POUCH BAG"},
+            {"h": "HPMXC172020GT", "n": "SATMOLA HING PAPDI MIXTURE Rs. 170/- 20 POUCH BAG"},
+            {"h": "BPC17020GT", "n": "SATMOLA BHEL PURI Rs. 170/- 20 POUCH BAG"},
+            {"h": "CPMXC17020GT", "n": "SATMOLA CORN PEANUT MIXTURE Rs. 170/- 20 POUCH BAG"},
+            {"h": "KMC17020GT", "n": "SATMOLA KHATTA MEETHA Rs. 170/- 20 POUCH BAG"},
+            {"h": "NMXC17020GT", "n": "SATMOLA NAVRATTAN MIX Rs. 170/- 20 POUCH BAG"},
+            {"h": "ABC17020GT", "n": "SATMOLA ALOO BHUJIA Rs. 170/- 20 POUCH BAG"},
+            {"h": "HSMXC17020GT", "n": "SATMOLA HOT SPICY MIXTURE Rs. 170/- 20 POUCH BAG"},
+            {"h": "TNC17020GT", "n": "SATMOLA TASTY NUT Rs. 170/- 20 POUCH BAG"},
+            {"h": "TMMX19020GT", "n": "SATMOLA TIKHA MEETHA MIXTURE Rs. 190/- 20 POUCH BAG"},
+            {"h": "CFMXC19020GT", "n": "SATMOLA CORNFLAKES Rs. 190/- 20 POUCH BAG"},
+            {"h": "SMXC19020GT", "n": "SATMOLA SHAHI MIX Rs. 190/- 20 POUCH BAG"},
+            {"h": "PBC19020GT", "n": "SATMOLA PANEER BHUJIA Rs. 190/- 20 POUCH BAG"},
+            {"h": "SPBC19020GT", "n": "SATMOLA SPICY PANNER BHUJIA Rs. 190/- 20 POUCH BAG"},
+            {"h": "CPMX10013", "n": "CORN PEANUT MIXTURE Rs. 100/- 13 POUCH BOX"},
+            {"h": "CFMC12013", "n": "CORNFLAKES Rs. 120/- 13 POUCH BOX"},
+            {"h": "ABC10016", "n": "ALOO BHUJIA Rs. 100/- 16 POUCH BOX"},
+            {"h": "BBC10016", "n": "BIKANERI BHUJIA Rs. 100/- 16 POUCH BOX"},
+            {"h": "HSMXC10016", "n": "HOT SPICY MIXTURE Rs. 100/- 16 POUCH BOX"},
+            {"h": "KMC10016", "n": "KHATTA MEETHA Rs. 100/- 16 POUCH BOX"},
+            {"h": "MDC12016", "n": "MOONG DAL Rs. 120/- 16 POUCH BOX"},
+            {"h": "MMC10016", "n": "MUMBAIYA MIX Rs. 100/- 16 POUCH BOX"},
+            {"h": "SMXC12016", "n": "SHAHI MIX Rs. 120/- 16 POUCH BOX"},
+            {"h": "TMC12016", "n": "TIKHA MEETHA Rs. 120/- 16 POUCH BOX"},
+            {"h": "TNC10016", "n": "TASTY NUT Rs. 100/- 16 POUCH BOX"},
+            {"h": "BPC10012", "n": "BOONDI PUDINA Rs. 100/- 12 POUCH BOX"},
+            {"h": "HPMXC10016", "n": "HING PEDA MIXTURE Rs. 100/- 16 POUCH BOX"},
+            {"h": "SPBC15030", "n": "SPICY PANEER BHUJIA Rs. 150/- 30 POUCH BOX"},
+            {"h": "PBC15030NV", "n": "PANEER BHUJIA Rs. 150/- 30 POUCH BOX"},
+            {"h": "BJC5020", "n": "BOONDI JEERA Rs. 50/- 20 POUCH BOX"},
+            {"h": "BMC5020", "n": "BOONDI MASALA Rs. 50/- 20 POUCH BOX"},
+            {"h": "BPC5020", "n": "BOONDI PUDINA Rs. 50/- 20 POUCH BOX"},
+            {"h": "BSC5020", "n": "BOONDI SALTED Rs. 50/- 20 POUCH BOX"},
+            {"h": "CPMXC5020", "n": "CORN PEANUT MIXTURE Rs. 50/- 20 POUCH BOX"},
+            {"h": "ABC5020", "n": "ALOO BHUJIA Rs. 50/- 20 POUCH BOX"},
+            {"h": "BBC5026", "n": "BHUJIA Rs. 50/- 26 POUCH BOX"},
+            {"h": "CFMC5026", "n": "CORNFLAKES MIX Rs. 50/- 26 POUCH BOX"},
+            {"h": "CHJC5026", "n": "CHANA HING JEERA Rs. 50/- 26 POUCH BOX"},
+            {"h": "HSMXC5026", "n": "HOT SPICY MIXTURE Rs. 50/- 26 POUCH BOX"},
+            {"h": "KMC5026", "n": "KHATTA MEETHA Rs. 50/- 26 POUCH BOX"},
+            {"h": "KMXC5026", "n": "KAJU MIX Rs. 50/- 26 POUCH BOX"},
+            {"h": "MDC5026", "n": "MOONG DAL Rs. 50/- 26 POUCH BOX"},
+            {"h": "NMC5026", "n": "NAVRATAN MIX Rs. 50/- 26 POUCH BOX"},
+            {"h": "SMXC5026", "n": "SHAHI MIX Rs. 50/- 26 POUCH BOX"},
+            {"h": "SPC5026", "n": "SALTED PEANUT Rs. 50/- 26 POUCH BOX"},
+            {"h": "TMC5026", "n": "TIKHA MEETHA MIXTURE Rs. 50/- 26 POUCH BOX"},
+            {"h": "TNC5026", "n": "TASTY NUT Rs. 50/- 26 POUCH BOX"},
+            {"h": "MSC5026", "n": "MALAI SEV Rs. 50/- 26 POUCH BOX"},
+            {"h": "KPBC5026", "n": "KESAR PANEER BHUJIA Rs. 50/- 26 POUCH BOX"},
+            {"h": "PBC5050", "n": "PANEER BHUJIA Rs. 50/- 50 POUCH BOX"},
+            {"h": "PBC17038025S", "n": "PANEER BHUJIA (FREE CHANA HING JEERA Rs.30/- 25 POUCH) Rs. 170/- 380 gm 25 POUCH"},
+            {"h": "SPBC17038025S", "n": "SPICY PANEER BHUJIA  (FREE CHANA HING JEERA Rs.30/- 25 POUCH) Rs. 170/- 380 gm 25 POUCH"},
+            {"h": "PRMC9248", "n": "PANCHRATAN Rs. 92/- 48 POUCH BOX"},
+            {"h": "ABC5504", "n": "ALOO BHUJIA Rs. 5/- 504 POUCH BOX"},
+            {"h": "BBC5504", "n": "BHUJIA Rs. 5/- 504 POUCH BOX"},
+            {"h": "BPC5504", "n": "BOONDI PUDINA Rs. 5/- 504 POUCH BOX"},
+            {"h": "CKNC5504", "n": "CHAKHNA Rs. 5/- 504 POUCH BOX"},
+            {"h": "CHJC5504", "n": "CHANA HING JEERA Rs. 5/- 504 POUCH BOX"},
+            {"h": "CPC5504", "n": "CHILLI PEANUT Rs. 5/- 504 POUCH BOX"},
+            {"h": "HSMC5504", "n": "HOT SPICY MIX Rs. 5/- 504 POUCH BOX"},
+            {"h": "KMC5504", "n": "KHATTA MEETHA Rs. 5/- 504 POUCH BOX"},
+            {"h": "LMC5504", "n": "LITE MIX Rs. 5/- 504 POUCH BOX"},
+            {"h": "MCC5505", "n": "MATAR CHATPATI Rs. 5/- 504 POUCH BOX"},
+            {"h": "MDC5504", "n": "MOONG DAL Rs. 5/- 504 POUCH BOX"},
+            {"h": "MMC5504", "n": "MUMBAIYA MIX Rs. 5/- 504 POUCH BOX"},
+            {"h": "NMC5504", "n": "NAVRATAN MIX Rs. 5/- 504 POUCH BOX"},
+            {"h": "PBC5004", "n": "PANEER BHUJIA Rs. 5/- 504 POUCH BOX"},
+            {"h": "PTC5504", "n": "PANJABI TADKA Rs. 5/- 504 POUCH BOX"},
+            {"h": "SPC5504", "n": "SALTED PEANUT Rs. 5/- 504 POUCH BOX"},
+            {"h": "SPBC5504", "n": "SPICY PANEER BHUJIA Rs. 5/- 504 POUCH BOX"},
+            {"h": "SMMC5504", "n": "SEV MURMURA Rs. 5/- 504 POUCH BOX"},
+            {"h": "TNC5504", "n": "TASTY NUT Rs. 5/- 504 POUCH BOX"},
+            {"h": "ABC10260", "n": "ALOO BHUJIA Rs. 10/- 260 POUCH BOX"},
+            {"h": "BBC10260", "n": "BHUJIA Rs. 10/- 260 POUCH BOX"},
+            {"h": "BSC10260", "n": "BOONDI SALTED Rs. 10/- 260 POUCH BOX"},
+            {"h": "BPC10260", "n": "BOONDI PUDINA Rs. 10/- 260 POUCH BOX"},
+            {"h": "CKNC10260", "n": "CHAKHNA Rs. 10/- 260 POUCH BOX"},
+            {"h": "CHJC10260", "n": "CHANA HING JEERA Rs. 10/- 260 POUCH BOX"},
+            {"h": "CPC10260", "n": "CHILLI PEANUT Rs. 10/- 260 POUCH BOX"},
+            {"h": "HSMC10260", "n": "HOT SPICY MIX Rs. 10/- 260 POUCH BOX"},
+            {"h": "KMC10260", "n": "KHATTA MEETHA Rs. 10/- 260 POUCH BOX"},
+            {"h": "LMC10260", "n": "LITE MIX Rs. 10/- 260 POUCH BOX"},
+            {"h": "MSC10260", "n": "MALAI SEV Rs. 10/- 260 POUCH BOX"},
+            {"h": "MCC10260", "n": "MATAR CHATPATI Rs. 10/- 260 POUCH BOX"},
+            {"h": "MDC10260", "n": "MOONG DAL Rs. 10/- 260 POUCH BOX"},
+            {"h": "MMC10260", "n": "MUMBAIYA MIX Rs. 10/- 260 POUCH BOX"},
+            {"h": "NMC10260", "n": "NAVRATAN MIX Rs. 10/- 260 POUCH BOX"},
+            {"h": "PRMC10260", "n": "PANCHRATTAN MIX Rs. 10/- 260 POUCH BOX"},
+            {"h": "PTC10260", "n": "PANJABI TADKA Rs. 10/- 260 POUCH BOX"},
+            {"h": "SPC10260", "n": "SALTED PEANUT Rs. 10/- 260 POUCH BOX"},
+            {"h": "SPBC10260", "n": "SPICY PANEER BHUJIA Rs. 10/- 260 POUCH BOX"},
+            {"h": "TNC10260", "n": "TASTY NUT Rs. 10/- 260 POUCH BOX"},
+            {"h": "BSC10200", "n": "BOONDI SALTED Rs. 10/- 260 POUCH BOX"},
+            {"h": "ABCDB5182", "n": "ABCD SNACKS Rs. 5/- 182 POUCH BAG"},
+            {"h": "SPC5182", "n": "SALTED PIPE Rs. 5/- 182 POUCH BOX"},
+            {"h": "KCMC5182", "n": "KRITOZ CHATPATA MASALA Rs. 5/- 182 POUCH BOX"}
+        ];
+
+        // -------------------------------------------------------------
+        // 2. STATE & STORAGE PERSISTENCE (DATE-WISE ACTIVE & MASTER)
+        // -------------------------------------------------------------
+        const STORAGE_KEY_ACTIVE = "SATMOLA_ACTIVE_STOCK_V4";
+        const STORAGE_KEY_MASTER = "SATMOLA_MASTER_ARCHIVE_V4";
+        const HISTORY_KEY = "SATMOLA_HISTORY_AUDIT_LOGS_V4";
+        const BATCH_KEY = "SATMOLA_BATCH_REPORTS_V1";
+        const MAX_DROPDOWN_ROWS = 60;
+
+        // Structure:
+        // dateWiseActiveDb[date] = { "ABB5504": { head, name, rounds: [5, 5, 55] } }
+        // dateWiseMasterDb[date] = { "ABB5504": { head, name, rounds: [5, 5, 55, 12] } }
+        // batchReports = [ { id, date, no, time, products, entries, totalQty, rows: [{head, name, rounds}] | null } ]
+        let dateWiseActiveDb = {};
+        let dateWiseMasterDb = {};
+        let historyLogs = [];
+        let batchReports = [];
+        let currentDateKey = "";   // "10/28/2026" (MM/DD/YYYY)
+        let currentIsoDate = "";   // "2026-10-28"
+        let masterDateKey = "";    // date selected inside the Master Report window
+        let masterTab = 'day';     // 'day' | 'reports' | 'all'
+        let historyTab = 'timeline'; // 'timeline' | 'counts'
+        let lastAutoName = '';     // product name that was auto-filled from a HEAD
+        let lastAutoHead = '';     // HEAD that was auto-filled from a product name
+        let batchBusy = false;
+
+        // Quick lookup tables for the search boxes
+        const MASTER_BY_HEAD = {};
+        const MASTER_BY_NAME = {};
+        SATMOLA_MASTER.forEach(p => {
+            const hk = p.h.toUpperCase();
+            const nk = p.n.toUpperCase();
+            if (!MASTER_BY_HEAD[hk]) MASTER_BY_HEAD[hk] = p;
+            if (!MASTER_BY_NAME[nk]) MASTER_BY_NAME[nk] = p;
+        });
+
+        // -------------------------------------------------------------
+        // Small helpers
+        // -------------------------------------------------------------
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+        function sumArr(a) { return (a || []).reduce((x, y) => x + y, 0); }
+        function fmt(n) { return Number(n || 0).toLocaleString('en-IN'); }
+        function isoToKey(iso) { const p = iso.split('-'); return `${p[1]}/${p[2]}/${p[0]}`; }
+        function keyToIso(key) { const p = key.split('/'); return `${p[2]}-${p[0]}-${p[1]}`; }
+        function keySortVal(key) { const p = key.split('/'); return p[2] + p[0] + p[1]; }
+        function fileDate(key) { return key.replace(/\//g, '-'); }
+        function nowTimeStr() {
+            return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        function listTotals(list) {
+            return {
+                products: list.length,
+                entries: list.reduce((a, i) => a + (i.rounds ? i.rounds.length : 0), 0),
+                qty: list.reduce((a, i) => a + sumArr(i.rounds), 0)
+            };
+        }
+
+        window.onload = function () {
+            // Set today's date
+            setTodayDate();
+
+            // Load saved data from localStorage
+            loadAllStorage();
+
+            // Tap on a suggestion (works for touch and mouse)
+            ['head-results', 'product-results'].forEach(id => {
+                document.getElementById(id).addEventListener('click', function (e) {
+                    const btn = e.target.closest('[data-idx]');
+                    if (btn) selectProduct(parseInt(btn.getAttribute('data-idx'), 10));
+                });
+            });
+
+            // Dismiss dropdowns when tapping anywhere outside the two search boxes
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('[data-dd]')) hideDropdowns();
+            });
+
+            window.addEventListener('afterprint', removePrintClone);
+        };
+
+        // -------------------------------------------------------------
+        // 3. DATE & CALENDAR PICKER UTILITIES
+        // -------------------------------------------------------------
+        function setTodayDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+
+            currentIsoDate = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('calendar-picker').value = currentIsoDate;
+
+            // Format matching the accounts sheet: MM/DD/YYYY (e.g. 10/28/2026)
+            currentDateKey = `${mm}/${dd}/${yyyy}`;
+            updateDateUI(currentDateKey, today);
+            renderTable();
+        }
+
+        function onCalendarDateChanged(isoDate) {
+            if (!isoDate) return;
+            currentIsoDate = isoDate;
+            const parts = isoDate.split('-'); // [YYYY, MM, DD]
+            if (parts.length === 3) {
+                currentDateKey = `${parts[1]}/${parts[2]}/${parts[0]}`;
+                const dateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+                updateDateUI(currentDateKey, dateObj);
+                renderTable();
+            }
+        }
+
+        function updateDateUI(dateStr, dateObj) {
+            const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+            const formatted = dateObj.toLocaleDateString('en-US', options);
+            document.getElementById('formatted-date-label').textContent = formatted;
+        }
+
+        // -------------------------------------------------------------
+        // 4. PRODUCT SEARCH (HEAD CODE + PRODUCT NAME) WITH AUTO-FILL
+        // -------------------------------------------------------------
+        function hideDropdowns() {
+            ['head-results', 'product-results'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+        }
+
+        // Indexes of SATMOLA_MASTER that match the typed text
+        function searchMaster(query, mode) {
+            const q = query.trim().toUpperCase();
+            const all = SATMOLA_MASTER.map((p, i) => i);
+            if (!q) return all;
+
+            if (mode === 'head') {
+                const hits = all.filter(i => SATMOLA_MASTER[i].h.toUpperCase().includes(q));
+                // Codes that START with the typed text come first
+                return hits.sort((a, b) =>
+                    (SATMOLA_MASTER[a].h.toUpperCase().startsWith(q) ? 0 : 1) -
+                    (SATMOLA_MASTER[b].h.toUpperCase().startsWith(q) ? 0 : 1));
+            }
+
+            // Name search: every typed word must appear in the name or the HEAD (so "aloo 504" works)
+            const tokens = q.split(/\s+/);
+            return all.filter(i => {
+                const hay = (SATMOLA_MASTER[i].h + ' ' + SATMOLA_MASTER[i].n).toUpperCase();
+                return tokens.every(t => hay.includes(t));
+            });
+        }
+
+        function renderDropdown(boxId, indexes) {
+            const box = document.getElementById(boxId);
+            if (!indexes.length) {
+                box.innerHTML = '<div class="px-3 py-3 text-xs text-slate-500">No match found. You can still type your own HEAD and name.</div>';
+                box.classList.remove('hidden');
+                return;
+            }
+            const shown = indexes.slice(0, MAX_DROPDOWN_ROWS);
+            let html = shown.map(i => {
+                const p = SATMOLA_MASTER[i];
+                return `<button type="button" data-idx="${i}" class="w-full text-left px-3 py-2.5 hover:bg-red-50 active:bg-red-100 block">
+                            <span class="block font-mono-code text-[12px] font-bold text-satmolaDarkRed">${esc(p.h)}</span>
+                            <span class="block text-xs font-medium text-slate-700">${esc(p.n)}</span>
+                        </button>`;
+            }).join('');
+            if (indexes.length > shown.length) {
+                html += `<div class="px-3 py-2 text-[11px] text-slate-400 text-center">Showing ${shown.length} of ${indexes.length}. Type more to narrow down.</div>`;
+            }
+            box.innerHTML = html;
+            box.classList.remove('hidden');
+        }
+
+        function onHeadInput(value) {
+            const prodInput = document.getElementById('product-input');
+            const exact = MASTER_BY_HEAD[value.trim().toUpperCase()];
+
+            if (exact) {
+                // Full HEAD typed: fill the product name automatically
+                prodInput.value = exact.n;
+                lastAutoName = exact.n;
+                document.getElementById('head-results').classList.add('hidden');
+            } else {
+                // HEAD changed after an auto-fill: remove the old auto-filled name
+                if (lastAutoName && prodInput.value === lastAutoName) {
+                    prodInput.value = '';
+                    lastAutoName = '';
+                }
+                renderDropdown('head-results', searchMaster(value, 'head'));
+            }
+            document.getElementById('product-results').classList.add('hidden');
+        }
+
+        function onHeadFocus() {
+            const v = document.getElementById('head-input').value;
+            document.getElementById('product-results').classList.add('hidden');
+            if (v.trim() && !MASTER_BY_HEAD[v.trim().toUpperCase()]) {
+                renderDropdown('head-results', searchMaster(v, 'head'));
+            }
+        }
+
+        function toggleHeadDropdown() {
+            const box = document.getElementById('head-results');
+            document.getElementById('product-results').classList.add('hidden');
+            if (box.classList.contains('hidden')) {
+                renderDropdown('head-results', searchMaster(document.getElementById('head-input').value, 'head'));
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function onProductInput(value) {
+            const headInput = document.getElementById('head-input');
+            const exact = MASTER_BY_NAME[value.trim().toUpperCase()];
+
+            if (exact) {
+                // Full product name typed: fill the HEAD automatically
+                headInput.value = exact.h;
+                lastAutoHead = exact.h;
+                document.getElementById('product-results').classList.add('hidden');
+            } else {
+                if (lastAutoHead && headInput.value === lastAutoHead) {
+                    headInput.value = '';
+                    lastAutoHead = '';
+                }
+                renderDropdown('product-results', searchMaster(value, 'name'));
+            }
+            document.getElementById('head-results').classList.add('hidden');
+        }
+
+        function onProductFocus() {
+            const v = document.getElementById('product-input').value;
+            document.getElementById('head-results').classList.add('hidden');
+            if (v.trim() && !MASTER_BY_NAME[v.trim().toUpperCase()]) {
+                renderDropdown('product-results', searchMaster(v, 'name'));
+            }
+        }
+
+        function toggleProductDropdown() {
+            const box = document.getElementById('product-results');
+            document.getElementById('head-results').classList.add('hidden');
+            if (box.classList.contains('hidden')) {
+                renderDropdown('product-results', searchMaster(document.getElementById('product-input').value, 'name'));
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function selectProduct(idx) {
+            const p = SATMOLA_MASTER[idx];
+            if (!p) return;
+            document.getElementById('head-input').value = p.h;
+            document.getElementById('product-input').value = p.n;
+            lastAutoName = p.n;
+            lastAutoHead = p.h;
+            hideDropdowns();
+            document.getElementById('qty-input').focus();
+        }
+
+        // -------------------------------------------------------------
+        // 5. ENTRY SUBMISSION & DYNAMIC ROUND (1, 2, 3...) LOGIC
+        // -------------------------------------------------------------
+        function handleSaveEntry(e) {
+            e.preventDefault();
+
+            const head = document.getElementById('head-input').value.trim().toUpperCase();
+            let name = document.getElementById('product-input').value.trim();
+            const qty = parseInt(document.getElementById('qty-input').value, 10);
+            const dateVal = currentDateKey;
+
+            // Known HEAD with an empty name: use the name from the product list
+            if (head && !name && MASTER_BY_HEAD[head]) {
+                name = MASTER_BY_HEAD[head].n;
+            }
+
+            if (!head || !name || isNaN(qty) || qty <= 0) {
+                showToast("Please enter a valid HEAD Code, Product Name, and Quantity!", "error");
+                return;
+            }
+
+            // 1. Update Active Stock (Store in rounds array)
+            if (!dateWiseActiveDb[dateVal]) {
+                dateWiseActiveDb[dateVal] = {};
+            }
+            const activeMap = dateWiseActiveDb[dateVal];
+            if (activeMap[head]) {
+                activeMap[head].rounds.push(qty);
+                const currentSum = sumArr(activeMap[head].rounds);
+                showToast(`+${qty} added! Round #${activeMap[head].rounds.length} Total: ${currentSum}`, "success");
+            } else {
+                activeMap[head] = { head, name, rounds: [qty] };
+                showToast(`${head} added with ${qty} in Round #1!`, "success");
+            }
+
+            // 2. Update Master Archive (Keeps all historical rounds across batches)
+            if (!dateWiseMasterDb[dateVal]) {
+                dateWiseMasterDb[dateVal] = {};
+            }
+            const masterMap = dateWiseMasterDb[dateVal];
+            if (masterMap[head]) {
+                masterMap[head].rounds.push(qty);
+            } else {
+                masterMap[head] = { head, name, rounds: [qty] };
+            }
+
+            // 3. Log to History Audit Timeline
+            historyLogs.unshift({
+                id: 'TX-' + Date.now(),
+                date: dateVal,
+                time: nowTimeStr(),
+                head: head,
+                name: name,
+                qtyAdded: qty,
+                roundNo: activeMap[head].rounds.length,
+                activeTotal: sumArr(activeMap[head].rounds),
+                masterTotal: sumArr(masterMap[head].rounds),
+                type: 'ENTRY'
+            });
+
+            saveAllStorage();
+            renderTable();
+
+            // Send this entry to the Production Sheet (kept in a queue until the server confirms it)
+            stockSyncAdd(currentIsoDate, head, name, qty);
+
+            // Clear inputs for next rapid entry
+            document.getElementById('head-input').value = '';
+            document.getElementById('product-input').value = '';
+            document.getElementById('qty-input').value = '';
+            lastAutoName = '';
+            lastAutoHead = '';
+            hideDropdowns();
+            document.getElementById('head-input').focus();
+        }
+
+        function clearForm() {
+            document.getElementById('head-input').value = '';
+            document.getElementById('product-input').value = '';
+            document.getElementById('qty-input').value = '';
+            lastAutoName = '';
+            lastAutoHead = '';
+            hideDropdowns();
+            document.getElementById('head-input').focus();
+        }
+
+        // -------------------------------------------------------------
+        // 6. GENERATE BATCH REPORT & RESET TO ZERO LOGIC
+        // -------------------------------------------------------------
+        async function generateBatchReportAndReset() {
+            if (batchBusy) return;
+            const dateKey = currentDateKey;
+            const list = Object.values(dateWiseActiveDb[dateKey] || {});
+
+            if (list.length === 0) {
+                showToast("No active stock entries to generate report!", "error");
+                return;
+            }
+
+            batchBusy = true;
+            try {
+                const no = batchReports.filter(b => b.date === dateKey).length + 1;
+                const rows = list.map(i => ({ head: i.head, name: i.name, rounds: i.rounds.slice() }));
+                const totals = listTotals(rows);
+
+                // Export first. Active stock is cleared only if the Excel file was created.
+                const ok = await exportListToExcel(rows, dateKey, `Satmola_BatchReport_${fileDate(dateKey)}_R${no}`, false);
+                if (!ok) return;
+
+                // Keep a full copy of this report in the Master archive
+                batchReports.push({
+                    id: 'B-' + Date.now(),
+                    date: dateKey,
+                    no: no,
+                    time: nowTimeStr(),
+                    products: totals.products,
+                    entries: totals.entries,
+                    totalQty: totals.qty,
+                    rows: rows
+                });
+
+                // Log Batch Generation Event into History
+                historyLogs.unshift({
+                    id: 'BATCH-' + Date.now(),
+                    date: dateKey,
+                    time: nowTimeStr(),
+                    head: `BATCH REPORT #${no} GENERATED`,
+                    name: `Exported batch with ${totals.products} products. Active screen reset to 0.`,
+                    qtyAdded: totals.qty,
+                    batchNo: no,
+                    type: 'BATCH_RESET'
+                });
+
+                // Reset Active Table to Zero for next session
+                delete dateWiseActiveDb[dateKey];
+
+                saveAllStorage();
+                renderTable();
+
+                showToast(`Report #${no} generated! Active table reset to 0. Master Report keeps everything.`, "success");
+            } finally {
+                batchBusy = false;
+            }
+        }
+
+        function confirmResetActiveStock() {
+            const activeItems = dateWiseActiveDb[currentDateKey] || {};
+            if (Object.keys(activeItems).length === 0) {
+                showToast("Active stock is already empty!", "info");
+                return;
+            }
+
+            const confirmed = window.confirm(`Reset active stock table for Date [${currentDateKey}]? (Data in Master Report will remain safe).`);
+            if (confirmed) {
+                delete dateWiseActiveDb[currentDateKey];
+                saveAllStorage();
+                renderTable();
+                showToast(`Active stock for ${currentDateKey} cleared.`, "success");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 7. SHARED TABLE RENDERER (HEAD | Item Name | 1 | 2 | 3... | Total [| Times])
+        // -------------------------------------------------------------
+        function renderReportTable(cfg) {
+            const list = cfg.list;
+            const withTimes = !!cfg.withTimes;
+            const headColor = cfg.theme === 'green' ? 'text-emerald-800 bg-emerald-50' : 'text-satmolaDarkRed bg-slate-50';
+            const totalColor = cfg.theme === 'green' ? 'text-emerald-800' : 'text-slate-900';
+
+            // At least 3 round columns (matches the accounts sheet)
+            let maxRounds = 3;
+            list.forEach(item => {
+                if (item.rounds && item.rounds.length > maxRounds) maxRounds = item.rounds.length;
+            });
+            const totalColumns = 2 + maxRounds + 1 + (withTimes ? 1 : 0);
+
+            // Header: centered date row + column titles
+            let theadHTML = `
+                <tr><th colspan="${totalColumns}" class="excel-header-date">Date - ${esc(cfg.dateKey)}</th></tr>
+                <tr>
+                    <th class="excel-col-header excel-head-col sticky-col text-center">HEAD</th>
+                    <th class="excel-col-header text-center">Item Name</th>`;
+            for (let i = 1; i <= maxRounds; i++) {
+                theadHTML += `<th class="excel-col-header excel-round-col text-center">${i}</th>`;
+            }
+            theadHTML += `<th class="excel-col-header excel-total-col text-center">Total</th>`;
+            if (withTimes) theadHTML += `<th class="excel-col-header excel-total-col text-center">Times</th>`;
+            theadHTML += `</tr>`;
+            cfg.theadEl.innerHTML = theadHTML;
+
+            // Body
+            let grandTotal = 0;
+            let grandTimes = 0;
+            const roundTotals = new Array(maxRounds).fill(0);
+            let bodyHTML = '';
+
+            if (list.length === 0) {
+                bodyHTML = `
+                    <tr>
+                        <td class="excel-cell text-center text-slate-400 py-8" colspan="${totalColumns}">
+                            <i class="fa-regular fa-folder-open text-3xl text-slate-300 block mb-2"></i>
+                            <span class="font-medium">${esc(cfg.emptyMsg)}</span>
+                            ${cfg.emptyHint ? `<br><span class="text-xs text-slate-500">${esc(cfg.emptyHint)}</span>` : ''}
+                        </td>
+                    </tr>`;
+            } else {
+                list.forEach(item => {
+                    const rowSum = sumArr(item.rounds);
+                    grandTotal += rowSum;
+                    grandTimes += item.rounds.length;
+
+                    let rowHTML = `
+                        <tr>
+                            <td class="excel-cell sticky-col text-center font-bold font-mono-code ${headColor}">${esc(item.head)}</td>
+                            <td class="excel-cell font-medium">${esc(item.name)}</td>`;
+                    for (let r = 0; r < maxRounds; r++) {
+                        const val = (item.rounds && item.rounds[r] !== undefined) ? item.rounds[r] : '';
+                        if (val !== '') roundTotals[r] += val;
+                        rowHTML += `<td class="excel-num-cell">${val !== '' ? val : ''}</td>`;
+                    }
+                    rowHTML += `<td class="excel-num-cell font-black ${totalColor}">${rowSum}</td>`;
+                    if (withTimes) rowHTML += `<td class="excel-num-cell text-slate-600">${item.rounds.length}</td>`;
+                    rowHTML += `</tr>`;
+                    bodyHTML += rowHTML;
+                });
+            }
+            cfg.tbodyEl.innerHTML = bodyHTML;
+
+            // Footer: grand total row
+            let tfootHTML = `
+                <tr class="font-bold bg-slate-50">
+                    <td class="excel-cell text-center font-bold bg-slate-50" colspan="2">${esc(cfg.grandLabel)}</td>`;
+            for (let r = 0; r < maxRounds; r++) {
+                tfootHTML += `<td class="excel-num-cell text-slate-700 font-bold bg-slate-50">${list.length > 0 && roundTotals[r] > 0 ? roundTotals[r] : ''}</td>`;
+            }
+            tfootHTML += `<td class="excel-num-cell ${cfg.theme === 'green' ? 'text-emerald-800' : 'text-satmolaRed'} font-black bg-slate-50">${grandTotal}</td>`;
+            if (withTimes) tfootHTML += `<td class="excel-num-cell text-slate-700 font-bold bg-slate-50">${grandTimes}</td>`;
+            tfootHTML += `</tr>`;
+            cfg.tfootEl.innerHTML = tfootHTML;
+
+            return { grandTotal, grandTimes, maxRounds };
+        }
+
+        function renderTable() {
+            const list = Object.values(dateWiseActiveDb[currentDateKey] || {});
+            const res = renderReportTable({
+                theadEl: document.getElementById('main-table-head'),
+                tbodyEl: document.getElementById('report-table-body'),
+                tfootEl: document.getElementById('report-table-foot'),
+                list: list,
+                dateKey: currentDateKey,
+                theme: 'red',
+                withTimes: false,
+                grandLabel: 'GRAND TOTAL',
+                emptyMsg: `No active stock entries logged for ${currentDateKey}.`,
+                emptyHint: 'Enter Product HEAD and Quantity above to add items.'
+            });
+            document.getElementById('badge-total-items').textContent = fmt(res.grandTotal);
+            document.getElementById('active-summary').textContent =
+                `${list.length} item${list.length === 1 ? '' : 's'} · ${res.grandTimes} entr${res.grandTimes === 1 ? 'y' : 'ies'}`;
+        }
+
+        // -------------------------------------------------------------
+        // 8. MASTER REPORT MODAL LOGIC (DAY / REPORTS MADE / ALL DAYS)
+        // -------------------------------------------------------------
+        function openMasterReportModal() {
+            document.getElementById('master-date-picker').value = currentIsoDate;
+            masterTab = 'day';
+            renderMasterReport(currentIsoDate);
+            document.getElementById('master-report-modal').classList.remove('hidden');
+        }
+
+        function closeMasterReportModal() {
+            document.getElementById('master-report-modal').classList.add('hidden');
+        }
+
+        function setMasterTab(tab) {
+            masterTab = tab;
+            renderMasterReport(document.getElementById('master-date-picker').value);
+        }
+
+        function openMasterDay(dateKey) {
+            document.getElementById('master-date-picker').value = keyToIso(dateKey);
+            masterTab = 'day';
+            renderMasterReport(keyToIso(dateKey));
+        }
+
+        function getAllDateKeys() {
+            const s = new Set(Object.keys(dateWiseMasterDb));
+            batchReports.forEach(b => s.add(b.date));
+            return Array.from(s).sort((a, b) => keySortVal(b).localeCompare(keySortVal(a)));
+        }
+
+        function dayStats(dateKey) {
+            const t = listTotals(Object.values(dateWiseMasterDb[dateKey] || {}));
+            t.reports = batchReports.filter(b => b.date === dateKey).length;
+            return t;
+        }
+
+        function renderMasterReport(isoDate) {
+            let key = currentDateKey;
+            if (isoDate && isoDate.split('-').length === 3) key = isoToKey(isoDate);
+            masterDateKey = key;
+
+            // Tab buttons + panes
+            ['day', 'reports', 'all'].forEach(t => {
+                const btn = document.getElementById('master-tab-' + t);
+                btn.className = 'py-2 rounded-lg ' + (t === masterTab
+                    ? 'bg-emerald-700 text-white shadow-sm'
+                    : 'bg-white text-slate-600 border border-slate-200');
+                document.getElementById('master-pane-' + t).classList.toggle('hidden', t !== masterTab);
+            });
+
+            const list = Object.values(dateWiseMasterDb[key] || {});
+            const st = dayStats(key);
+
+            // ---- Pane 1: selected day, product wise ----
+            document.getElementById('master-stats').innerHTML = [
+                ['Items', st.products, 'text-slate-800'],
+                ['Entries', st.entries, 'text-satmolaDarkRed'],
+                ['Reports', st.reports, 'text-amber-700'],
+                ['Total Qty', fmt(st.qty), 'text-emerald-800']
+            ].map(s => `
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-1.5 py-2 text-center">
+                    <div class="text-[10px] uppercase font-semibold text-slate-500">${s[0]}</div>
+                    <div class="text-sm sm:text-base font-extrabold ${s[2]}">${s[1]}</div>
+                </div>`).join('');
+
+            renderReportTable({
+                theadEl: document.getElementById('master-table-head'),
+                tbodyEl: document.getElementById('master-table-body'),
+                tfootEl: document.getElementById('master-table-foot'),
+                list: list,
+                dateKey: key,
+                theme: 'green',
+                withTimes: true,
+                grandLabel: 'MASTER GRAND TOTAL',
+                emptyMsg: `No master records found for ${key}.`,
+                emptyHint: ''
+            });
+
+            // ---- Pane 2: reports made on this day ----
+            const dayBatches = batchReports.filter(b => b.date === key).slice().sort((a, b) => b.no - a.no);
+            document.getElementById('master-reports-head').innerHTML = `
+                <tr><th colspan="6" class="excel-header-date">Reports Made - ${esc(key)}</th></tr>
+                <tr>
+                    <th class="excel-col-header text-center">Report</th>
+                    <th class="excel-col-header text-center">Time</th>
+                    <th class="excel-col-header text-center">Items</th>
+                    <th class="excel-col-header text-center">Entries</th>
+                    <th class="excel-col-header text-center">Qty</th>
+                    <th class="excel-col-header text-center no-export">Excel</th>
+                </tr>`;
+            let rb = '';
+            if (!dayBatches.length) {
+                rb = `<tr><td class="excel-cell text-center text-slate-400 py-8" colspan="6">
+                        <i class="fa-regular fa-folder-open text-3xl text-slate-300 block mb-2"></i>
+                        <span class="font-medium">No report generated on ${esc(key)} yet.</span></td></tr>`;
+            } else {
+                dayBatches.forEach(b => {
+                    rb += `<tr>
+                        <td class="excel-cell text-center font-bold text-emerald-800">#${b.no}</td>
+                        <td class="excel-cell text-center">${esc(b.time)}</td>
+                        <td class="excel-num-cell">${b.products}</td>
+                        <td class="excel-num-cell">${b.entries == null ? '-' : b.entries}</td>
+                        <td class="excel-num-cell font-black text-emerald-800">${fmt(b.totalQty)}</td>
+                        <td class="excel-cell text-center no-export">${b.rows
+                            ? `<button type="button" onclick="downloadBatchExcel('${esc(b.id)}')" class="px-2 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-[11px]"><i class="fa-solid fa-file-excel"></i></button>`
+                            : '<span class="text-[10px] text-slate-400">old</span>'}</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('master-reports-body').innerHTML = rb;
+            document.getElementById('master-reports-foot').innerHTML = dayBatches.length ? `
+                <tr class="font-bold bg-slate-50">
+                    <td class="excel-cell text-center bg-slate-50" colspan="2">${dayBatches.length} REPORT${dayBatches.length === 1 ? '' : 'S'}</td>
+                    <td class="excel-num-cell bg-slate-50"></td>
+                    <td class="excel-num-cell bg-slate-50"></td>
+                    <td class="excel-num-cell font-black text-emerald-800 bg-slate-50">${fmt(dayBatches.reduce((a, b) => a + b.totalQty, 0))}</td>
+                    <td class="excel-cell bg-slate-50 no-export"></td>
+                </tr>` : '';
+
+            // ---- Pane 3: all days ----
+            const keys = getAllDateKeys();
+            document.getElementById('master-all-head').innerHTML = `
+                <tr><th colspan="5" class="excel-header-date">All Days Summary</th></tr>
+                <tr>
+                    <th class="excel-col-header text-center">Date</th>
+                    <th class="excel-col-header text-center">Items</th>
+                    <th class="excel-col-header text-center">Entries</th>
+                    <th class="excel-col-header text-center">Reports</th>
+                    <th class="excel-col-header text-center">Total Qty</th>
+                </tr>`;
+            let ab = '';
+            const grand = { entries: 0, reports: 0, qty: 0 };
+            if (!keys.length) {
+                ab = `<tr><td class="excel-cell text-center text-slate-400 py-8" colspan="5">
+                        <i class="fa-regular fa-folder-open text-3xl text-slate-300 block mb-2"></i>
+                        <span class="font-medium">No data saved yet.</span></td></tr>`;
+            } else {
+                keys.forEach(k => {
+                    const s = dayStats(k);
+                    grand.entries += s.entries; grand.reports += s.reports; grand.qty += s.qty;
+                    ab += `<tr onclick="openMasterDay('${esc(k)}')" class="cursor-pointer active:bg-emerald-50">
+                        <td class="excel-cell text-center font-bold text-emerald-800">${esc(k)}</td>
+                        <td class="excel-num-cell">${s.products}</td>
+                        <td class="excel-num-cell">${s.entries}</td>
+                        <td class="excel-num-cell">${s.reports}</td>
+                        <td class="excel-num-cell font-black text-emerald-800">${fmt(s.qty)}</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('master-all-body').innerHTML = ab;
+            document.getElementById('master-all-foot').innerHTML = keys.length ? `
+                <tr class="font-bold bg-slate-50">
+                    <td class="excel-cell text-center bg-slate-50" colspan="2">${keys.length} DAY${keys.length === 1 ? '' : 'S'} TOTAL</td>
+                    <td class="excel-num-cell bg-slate-50">${grand.entries}</td>
+                    <td class="excel-num-cell bg-slate-50">${grand.reports}</td>
+                    <td class="excel-num-cell font-black text-emerald-800 bg-slate-50">${fmt(grand.qty)}</td>
+                </tr>` : '';
+
+            // Footer label
+            document.getElementById('master-item-count-label').textContent =
+                masterTab === 'all' ? `${keys.length} day${keys.length === 1 ? '' : 's'} saved`
+                : masterTab === 'reports' ? `${dayBatches.length} report${dayBatches.length === 1 ? '' : 's'} on ${key}`
+                : `${list.length} Unique Product Items`;
+        }
+
+        // The table currently visible inside the Master Report window
+        function getMasterVisibleTable() {
+            const id = masterTab === 'reports' ? 'master-reports-table'
+                     : masterTab === 'all' ? 'master-all-table' : 'master-report-table';
+            return document.getElementById(id);
+        }
+        function getMasterVisiblePane() {
+            return document.getElementById('master-pane-' + masterTab);
+        }
+
+        // -------------------------------------------------------------
+        // 9. HISTORY MODAL LOGIC (TIMELINE + PRODUCT COUNT)
+        // -------------------------------------------------------------
+        function openHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            const dateFilter = document.getElementById('history-date-filter');
+
+            const datesSet = new Set(historyLogs.map(item => item.date));
+            Object.keys(dateWiseMasterDb).forEach(d => datesSet.add(d));
+            datesSet.add(currentDateKey);
+
+            dateFilter.innerHTML = '<option value="ALL">All Dates</option>';
+            Array.from(datesSet).sort((a, b) => keySortVal(b).localeCompare(keySortVal(a))).forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                if (d === currentDateKey) opt.selected = true;
+                dateFilter.appendChild(opt);
+            });
+
+            historyTab = 'timeline';
+            renderHistory(currentDateKey);
+            modal.classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').classList.add('hidden');
+        }
+
+        function setHistoryTab(tab) {
+            historyTab = tab;
+            renderHistory(document.getElementById('history-date-filter').value);
+        }
+
+        function renderHistory(filterDate) {
+            ['timeline', 'counts'].forEach(t => {
+                const btn = document.getElementById('history-tab-' + t);
+                btn.className = 'py-2 rounded-lg ' + (t === historyTab
+                    ? 'bg-satmolaRed text-white shadow-sm'
+                    : 'bg-white text-slate-600 border border-slate-200');
+            });
+            document.getElementById('history-timeline-container').classList.toggle('hidden', historyTab !== 'timeline');
+            document.getElementById('history-counts-container').classList.toggle('hidden', historyTab !== 'counts');
+            renderHistoryTimeline(filterDate);
+            renderHistoryCounts(filterDate);
+        }
+
+        function renderHistoryTimeline(filterDate) {
+            const container = document.getElementById('history-timeline-container');
+            const countBadge = document.getElementById('history-tx-count');
+
+            let filtered = historyLogs;
+            if (filterDate && filterDate !== 'ALL') {
+                filtered = historyLogs.filter(h => h.date === filterDate);
+            }
+
+            countBadge.textContent = filtered.filter(h => h.type !== 'BATCH_RESET').length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="py-12 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-clock-rotate-left text-3xl text-slate-300 block mb-2"></i>
+                        No transaction history found for this selection.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="space-y-2.5">';
+            filtered.forEach(log => {
+                if (log.type === 'BATCH_RESET') {
+                    html += `
+                        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-8 h-8 rounded-lg bg-amber-200 text-amber-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-file-invoice"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-xs text-amber-900">${esc(log.head)}</div>
+                                    <div class="text-[11px] text-amber-700">${esc(log.name)}</div>
+                                    <div class="text-[10px] text-amber-600 mt-0.5">${esc(log.date)} at ${esc(log.time)}</div>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-[10px] text-amber-600 uppercase font-medium block">Batch Total</span>
+                                <span class="text-xs font-black text-amber-900">${fmt(log.qtyAdded)}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="min-w-8 h-8 px-1 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+                                    +${log.qtyAdded}
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-xs text-slate-800">
+                                        <span class="font-mono-code text-satmolaDarkRed mr-1">${esc(log.head)}</span>
+                                        ${esc(log.name)}
+                                    </div>
+                                    <div class="text-[10px] text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                                        <span class="bg-slate-100 text-slate-700 font-bold px-1.5 rounded text-[9px]">Round #${log.roundNo || 1}</span>
+                                        <span><i class="fa-regular fa-calendar text-slate-400 mr-0.5"></i> ${esc(log.date)}</span>
+                                        <span><i class="fa-regular fa-clock text-slate-400 mr-0.5"></i> ${esc(log.time)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-[10px] text-slate-400 block uppercase font-medium">Running Total</span>
+                                <span class="text-xs font-black text-slate-800">${log.activeTotal}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Product Count tab: how many times each product was loaded, and total qty
+        function renderHistoryCounts(filterDate) {
+            const container = document.getElementById('history-counts-container');
+            const dates = (filterDate && filterDate !== 'ALL') ? [filterDate] : Object.keys(dateWiseMasterDb);
+
+            const map = {};
+            dates.forEach(d => {
+                Object.values(dateWiseMasterDb[d] || {}).forEach(item => {
+                    if (!map[item.head]) map[item.head] = { head: item.head, name: item.name, times: 0, qty: 0 };
+                    map[item.head].times += item.rounds.length;
+                    map[item.head].qty += sumArr(item.rounds);
+                });
+            });
+            const rows = Object.values(map).sort((a, b) => b.qty - a.qty);
+
+            if (!rows.length) {
+                container.innerHTML = `
+                    <div class="py-12 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-boxes-stacked text-3xl text-slate-300 block mb-2"></i>
+                        No stock entries found for this selection.
+                    </div>`;
+                return;
+            }
+
+            const totalTimes = rows.reduce((a, r) => a + r.times, 0);
+            const totalQty = rows.reduce((a, r) => a + r.qty, 0);
+            let html = `
+                <div class="overflow-x-auto custom-scroll">
+                <table class="excel-table text-left bg-white">
+                    <thead>
+                        <tr>
+                            <th class="excel-col-header text-center">#</th>
+                            <th class="excel-col-header text-left">Product</th>
+                            <th class="excel-col-header excel-total-col text-center">Times Loaded</th>
+                            <th class="excel-col-header excel-total-col text-center">Total Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            rows.forEach((r, i) => {
+                html += `
+                        <tr>
+                            <td class="excel-cell text-center text-slate-500">${i + 1}</td>
+                            <td class="excel-cell">
+                                <span class="block font-mono-code font-bold text-satmolaDarkRed">${esc(r.head)}</span>
+                                <span class="block font-medium">${esc(r.name)}</span>
+                            </td>
+                            <td class="excel-num-cell">${r.times}</td>
+                            <td class="excel-num-cell font-black">${fmt(r.qty)}</td>
+                        </tr>`;
+            });
+            html += `
+                    </tbody>
+                    <tfoot>
+                        <tr class="font-bold bg-slate-50">
+                            <td class="excel-cell text-center bg-slate-50" colspan="2">TOTAL (${rows.length} items)</td>
+                            <td class="excel-num-cell bg-slate-50">${totalTimes}</td>
+                            <td class="excel-num-cell font-black text-satmolaRed bg-slate-50">${fmt(totalQty)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                </div>`;
+            container.innerHTML = html;
+        }
+
+        // -------------------------------------------------------------
+        // 10. STORAGE PERSISTENCE HELPERS
+        // -------------------------------------------------------------
+        function saveAllStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify(dateWiseActiveDb));
+                localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(dateWiseMasterDb));
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLogs));
+                localStorage.setItem(BATCH_KEY, JSON.stringify(batchReports));
+            } catch (err) {
+                console.error("Storage error:", err);
+                showToast("Could not save on this phone (storage full or blocked)!", "error");
+            }
+        }
+
+        function loadAllStorage() {
+            try {
+                const act = localStorage.getItem(STORAGE_KEY_ACTIVE);
+                dateWiseActiveDb = act ? JSON.parse(act) : {};
+
+                const mst = localStorage.getItem(STORAGE_KEY_MASTER);
+                dateWiseMasterDb = mst ? JSON.parse(mst) : {};
+
+                const hst = localStorage.getItem(HISTORY_KEY);
+                historyLogs = hst ? JSON.parse(hst) : [];
+
+                const bat = localStorage.getItem(BATCH_KEY);
+                batchReports = bat ? JSON.parse(bat) : [];
+
+                // Data migration check: if old items had .total instead of .rounds
+                [dateWiseActiveDb, dateWiseMasterDb].forEach(db => {
+                    Object.values(db).forEach(dateObj => {
+                        Object.values(dateObj).forEach(item => {
+                            if (!item.rounds && typeof item.total === 'number') {
+                                item.rounds = [item.total];
+                            }
+                        });
+                    });
+                });
+
+                // First run of the new version: reports generated earlier only exist as history lines.
+                // Show them in "Reports Made" too (their item details were not stored, so no Excel for them).
+                if (bat === null) {
+                    const counters = {};
+                    historyLogs.filter(h => h.type === 'BATCH_RESET').slice().reverse().forEach(h => {
+                        counters[h.date] = (counters[h.date] || 0) + 1;
+                        const m = /with (\d+) products/.exec(h.name || '');
+                        batchReports.push({
+                            id: 'B-OLD-' + h.id,
+                            date: h.date,
+                            no: counters[h.date],
+                            time: h.time,
+                            products: m ? parseInt(m[1], 10) : 0,
+                            entries: null,
+                            totalQty: h.qtyAdded || 0,
+                            rows: null
+                        });
+                    });
+                    if (batchReports.length) saveAllStorage();
+                }
+            } catch (e) {
+                dateWiseActiveDb = {};
+                dateWiseMasterDb = {};
+                historyLogs = [];
+                batchReports = [];
+            }
+            renderTable();
+        }
+
+        // -------------------------------------------------------------
+        // 11. EXPORT HANDLERS (EXCEL .xlsx, PDF, JPG, WORD)
+        // -------------------------------------------------------------
+        const XL_THIN = { style: 'thin', color: { argb: 'FF000000' } };
+        const XL_BORDER = { top: XL_THIN, left: XL_THIN, bottom: XL_THIN, right: XL_THIN };
+
+        function xlSafeSheetName(name, wb) {
+            let base = String(name).replace(/[\\\/\?\*\[\]:]/g, '-').slice(0, 31) || 'Sheet';
+            let n = base, i = 2;
+            while (wb.getWorksheet(n)) { n = base.slice(0, 28) + '-' + i; i++; }
+            return n;
+        }
+
+        // Same look as the accounts sheet: date row, green header, black borders, grand total row
+        function addReportSheet(wb, sheetName, dateKey, list, withTimes) {
+            const ws = wb.addWorksheet(xlSafeSheetName(sheetName, wb), {
+                views: [{ state: 'frozen', xSplit: 2, ySplit: 2 }],
+                pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+            });
+
+            let maxRounds = 3;
+            list.forEach(item => { if (item.rounds.length > maxRounds) maxRounds = item.rounds.length; });
+            const totalCols = 2 + maxRounds + 1 + (withTimes ? 1 : 0);
+
+            // Row 1: merged date title
+            ws.mergeCells(1, 1, 1, totalCols);
+            for (let c = 1; c <= totalCols; c++) ws.getCell(1, c).border = XL_BORDER;
+            const title = ws.getCell(1, 1);
+            title.value = `Date - ${dateKey}`;
+            title.font = { bold: true, size: 13 };
+            title.alignment = { horizontal: 'center', vertical: 'middle' };
+            ws.getRow(1).height = 22;
+
+            // Row 2: column headers
+            const headers = ['HEAD', 'Item Name'];
+            for (let i = 1; i <= maxRounds; i++) headers.push(i);
+            headers.push('Total');
+            if (withTimes) headers.push('Times');
+            headers.forEach((h, idx) => {
+                const cell = ws.getCell(2, idx + 1);
+                cell.value = h;
+                cell.font = { bold: true, color: { argb: 'FF375623' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = XL_BORDER;
+            });
+
+            // Product rows
+            let rowNo = 3;
+            let grandTotal = 0, grandTimes = 0;
+            const roundTotals = new Array(maxRounds).fill(0);
+            list.forEach(item => {
+                const rowSum = sumArr(item.rounds);
+                grandTotal += rowSum;
+                grandTimes += item.rounds.length;
+
+                const head = ws.getCell(rowNo, 1);
+                head.value = item.head;
+                head.font = { bold: true };
+                head.alignment = { horizontal: 'center', vertical: 'middle' };
+                head.border = XL_BORDER;
+
+                const nm = ws.getCell(rowNo, 2);
+                nm.value = item.name;
+                nm.alignment = { vertical: 'middle', wrapText: true };
+                nm.border = XL_BORDER;
+
+                for (let r = 0; r < maxRounds; r++) {
+                    const cell = ws.getCell(rowNo, 3 + r);
+                    if (item.rounds[r] !== undefined) {
+                        cell.value = item.rounds[r];
+                        roundTotals[r] += item.rounds[r];
+                    }
+                    cell.alignment = { horizontal: 'right' };
+                    cell.border = XL_BORDER;
+                }
+                const tot = ws.getCell(rowNo, 3 + maxRounds);
+                tot.value = rowSum;
+                tot.font = { bold: true };
+                tot.alignment = { horizontal: 'right' };
+                tot.border = XL_BORDER;
+                if (withTimes) {
+                    const t = ws.getCell(rowNo, 4 + maxRounds);
+                    t.value = item.rounds.length;
+                    t.alignment = { horizontal: 'right' };
+                    t.border = XL_BORDER;
+                }
+                rowNo++;
+            });
+
+            // Grand total row
+            ws.mergeCells(rowNo, 1, rowNo, 2);
+            for (let c = 1; c <= totalCols; c++) {
+                const cell = ws.getCell(rowNo, c);
+                cell.border = XL_BORDER;
+                cell.font = { bold: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+            }
+            const label = ws.getCell(rowNo, 1);
+            label.value = withTimes ? 'MASTER GRAND TOTAL' : 'GRAND TOTAL';
+            label.alignment = { horizontal: 'center' };
+            for (let r = 0; r < maxRounds; r++) {
+                const cell = ws.getCell(rowNo, 3 + r);
+                if (roundTotals[r] > 0) cell.value = roundTotals[r];
+                cell.alignment = { horizontal: 'right' };
+            }
+            const gt = ws.getCell(rowNo, 3 + maxRounds);
+            gt.value = grandTotal;
+            gt.alignment = { horizontal: 'right' };
+            if (withTimes) {
+                const gtt = ws.getCell(rowNo, 4 + maxRounds);
+                gtt.value = grandTimes;
+                gtt.alignment = { horizontal: 'right' };
+            }
+
+            // Column widths
+            ws.getColumn(1).width = 16;
+            ws.getColumn(2).width = 52;
+            for (let r = 0; r < maxRounds; r++) ws.getColumn(3 + r).width = 8;
+            ws.getColumn(3 + maxRounds).width = 11;
+            if (withTimes) ws.getColumn(4 + maxRounds).width = 9;
+            return ws;
+        }
+
+        // Plain styled table sheet (used for the reports log and summaries)
+        function addTableSheet(wb, sheetName, title, headers, rows, widths, totalRow) {
+            const ws = wb.addWorksheet(xlSafeSheetName(sheetName, wb), {
+                views: [{ state: 'frozen', ySplit: 2 }],
+                pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+            });
+            const cols = headers.length;
+            ws.mergeCells(1, 1, 1, cols);
+            for (let c = 1; c <= cols; c++) ws.getCell(1, c).border = XL_BORDER;
+            const t = ws.getCell(1, 1);
+            t.value = title;
+            t.font = { bold: true, size: 13 };
+            t.alignment = { horizontal: 'center', vertical: 'middle' };
+            ws.getRow(1).height = 22;
+
+            headers.forEach((h, idx) => {
+                const cell = ws.getCell(2, idx + 1);
+                cell.value = h;
+                cell.font = { bold: true, color: { argb: 'FF375623' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = XL_BORDER;
+            });
+            let rn = 3;
+            rows.forEach(r => {
+                r.forEach((v, idx) => {
+                    const cell = ws.getCell(rn, idx + 1);
+                    cell.value = v;
+                    cell.border = XL_BORDER;
+                    cell.alignment = { horizontal: typeof v === 'number' ? 'right' : 'left', vertical: 'middle', wrapText: true };
+                });
+                rn++;
+            });
+            if (totalRow) {
+                totalRow.forEach((v, idx) => {
+                    const cell = ws.getCell(rn, idx + 1);
+                    cell.value = v === '' ? null : v;
+                    cell.border = XL_BORDER;
+                    cell.font = { bold: true };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                    cell.alignment = { horizontal: typeof v === 'number' ? 'right' : 'left' };
+                });
+            }
+            widths.forEach((w, idx) => { ws.getColumn(idx + 1).width = w; });
+            return ws;
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            // Give the phone time to start the download before releasing the file
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+        }
+
+        async function downloadWorkbook(wb, filename) {
+            const buf = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            triggerDownload(blob, filename + '.xlsx');
+        }
+
+        // CSV fallback (only used if the Excel library could not load, e.g. no internet on first open)
+        function downloadCsv(list, dateKey, filename, withTimes) {
+            let maxRounds = 3;
+            list.forEach(item => { if (item.rounds.length > maxRounds) maxRounds = item.rounds.length; });
+
+            let csv = "﻿";
+            csv += `Date - ${dateKey}\n`;
+            const headers = ["HEAD", "Item Name"];
+            for (let i = 1; i <= maxRounds; i++) headers.push(String(i));
+            headers.push("Total");
+            if (withTimes) headers.push("Times");
+            csv += headers.join(",") + "\n";
+
+            let grandTotal = 0;
+            const roundTotals = new Array(maxRounds).fill(0);
+            list.forEach(item => {
+                const rowSum = sumArr(item.rounds);
+                grandTotal += rowSum;
+                const parts = [item.head, `"${String(item.name).replace(/"/g, '""')}"`];
+                for (let r = 0; r < maxRounds; r++) {
+                    const val = item.rounds[r] !== undefined ? item.rounds[r] : '';
+                    if (val !== '') roundTotals[r] += val;
+                    parts.push(val);
+                }
+                parts.push(rowSum);
+                if (withTimes) parts.push(item.rounds.length);
+                csv += parts.join(",") + "\n";
+            });
+            const totalParts = ["GRAND TOTAL", ""];
+            for (let r = 0; r < maxRounds; r++) totalParts.push(roundTotals[r] > 0 ? roundTotals[r] : "");
+            totalParts.push(grandTotal);
+            if (withTimes) totalParts.push(list.reduce((a, i) => a + i.rounds.length, 0));
+            csv += totalParts.join(",") + "\n";
+
+            triggerDownload(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename + '.csv');
+        }
+
+        // One-sheet report for a list of items. Returns true when a file was created.
+        async function exportListToExcel(list, dateKey, filename, withTimes, extraSheetsFn) {
+            if (!list.length) {
+                showToast("No data available to export!", "error");
+                return false;
+            }
+            try {
+                if (typeof ExcelJS === 'undefined') {
+                    downloadCsv(list, dateKey, filename, withTimes);
+                    showToast("Excel library not loaded (no internet). CSV file downloaded instead.", "info");
+                    return true;
+                }
+                const wb = new ExcelJS.Workbook();
+                wb.creator = 'Satmola Daily Stock Logger';
+                addReportSheet(wb, fileDate(dateKey), dateKey, list, withTimes);
+                if (extraSheetsFn) extraSheetsFn(wb);
+                await downloadWorkbook(wb, filename);
+                showToast("Excel (.xlsx) report downloaded!", "success");
+                return true;
+            } catch (err) {
+                console.error(err);
+                showToast("Could not create the Excel file. Please try again.", "error");
+                return false;
+            }
+        }
+
+        // Active (live) table -> Excel. Master has its own button (exportMasterExcel).
+        function exportToExcel(mode = 'ACTIVE', customFilename = null) {
+            if (mode === 'MASTER') return exportMasterExcel();
+            const list = Object.values(dateWiseActiveDb[currentDateKey] || {});
+            return exportListToExcel(list, currentDateKey,
+                customFilename || `Satmola_Active_Stock_${fileDate(currentDateKey)}`, false);
+        }
+
+        function batchLogRows(batches) {
+            return batches.map(b => [b.date, b.no, b.time, b.products, b.entries == null ? '' : b.entries, b.totalQty]);
+        }
+        function addBatchLogSheet(wb, name, title, batches) {
+            const sorted = batches.slice().sort((a, b) => keySortVal(a.date).localeCompare(keySortVal(b.date)) || a.no - b.no);
+            addTableSheet(wb, name, title,
+                ['Date', 'Report No', 'Time', 'Items', 'Entries', 'Total Qty'],
+                batchLogRows(sorted), [14, 11, 13, 9, 9, 12],
+                ['TOTAL', sorted.length, '', '', '', sorted.reduce((a, b) => a + b.totalQty, 0)]);
+        }
+
+        // Master Excel: Day Report / Reports Made tabs -> that day; All Days tab -> everything
+        async function exportMasterExcel() {
+            if (masterTab === 'all') return exportAllDaysExcel();
+
+            const key = masterDateKey || currentDateKey;
+            const list = Object.values(dateWiseMasterDb[key] || {});
+            const dayBatches = batchReports.filter(b => b.date === key);
+            return exportListToExcel(list, key, `Satmola_Master_Stock_${fileDate(key)}`, true, wb => {
+                if (dayBatches.length) addBatchLogSheet(wb, 'Reports Made', `Reports Made - ${key}`, dayBatches);
+            });
+        }
+
+        async function exportAllDaysExcel() {
+            const keys = getAllDateKeys();
+            if (!keys.length) {
+                showToast("No data available to export!", "error");
+                return false;
+            }
+            if (typeof ExcelJS === 'undefined') {
+                showToast("Excel library not loaded. Please connect to internet and try again.", "error");
+                return false;
+            }
+            try {
+                const wb = new ExcelJS.Workbook();
+                wb.creator = 'Satmola Daily Stock Logger';
+
+                // Sheet 1: one line per day
+                const grand = { entries: 0, reports: 0, qty: 0 };
+                const dayRows = keys.map(k => {
+                    const s = dayStats(k);
+                    grand.entries += s.entries; grand.reports += s.reports; grand.qty += s.qty;
+                    return [k, s.products, s.entries, s.reports, s.qty];
+                });
+                addTableSheet(wb, 'All Days', 'All Days Summary',
+                    ['Date', 'Items', 'Entries', 'Reports', 'Total Qty'], dayRows, [14, 10, 10, 10, 13],
+                    ['TOTAL', '', grand.entries, grand.reports, grand.qty]);
+
+                // Sheet 2: every product across all days
+                const map = {};
+                keys.forEach(k => Object.values(dateWiseMasterDb[k] || {}).forEach(it => {
+                    if (!map[it.head]) map[it.head] = { head: it.head, name: it.name, times: 0, qty: 0 };
+                    map[it.head].times += it.rounds.length;
+                    map[it.head].qty += sumArr(it.rounds);
+                }));
+                const prodRows = Object.values(map).sort((a, b) => b.qty - a.qty).map(p => [p.head, p.name, p.times, p.qty]);
+                addTableSheet(wb, 'Product Totals', 'Product Totals (All Days)',
+                    ['HEAD', 'Item Name', 'Times Loaded', 'Total Qty'], prodRows, [16, 52, 14, 13],
+                    ['TOTAL', '', prodRows.reduce((a, r) => a + r[2], 0), prodRows.reduce((a, r) => a + r[3], 0)]);
+
+                // Sheet 3: every report ever generated
+                if (batchReports.length) addBatchLogSheet(wb, 'Reports Made', 'All Reports Made', batchReports);
+
+                // One sheet per day (oldest first), same format as the daily report
+                keys.slice().reverse().forEach(k => {
+                    const list = Object.values(dateWiseMasterDb[k] || {});
+                    if (list.length) addReportSheet(wb, fileDate(k), k, list, true);
+                });
+
+                await downloadWorkbook(wb, `Satmola_Master_All_Days`);
+                showToast("Master Excel (all days) downloaded!", "success");
+                return true;
+            } catch (err) {
+                console.error(err);
+                showToast("Could not create the Excel file. Please try again.", "error");
+                return false;
+            }
+        }
+
+        // Re-download a report that was generated earlier
+        async function downloadBatchExcel(id) {
+            const b = batchReports.find(x => x.id === id);
+            if (!b || !b.rows) {
+                showToast("Details of this older report were not saved.", "error");
+                return;
+            }
+            await exportListToExcel(b.rows, b.date, `Satmola_BatchReport_${fileDate(b.date)}_R${b.no}`, false);
+        }
+
+        // ---- PDF / print: print a clean copy of the visible report ----
+        function removePrintClone() {
+            const old = document.getElementById('print-clone');
+            if (old) old.remove();
+        }
+
+        function exportToPDF(mode = 'ACTIVE') {
+            const isMaster = mode === 'MASTER';
+            const source = isMaster ? getMasterVisiblePane() : document.getElementById('print-area');
+            removePrintClone();
+
+            const clone = document.createElement('div');
+            clone.id = 'print-clone';
+            clone.innerHTML = `<div style="font-weight:800;font-size:14px;margin-bottom:6px;">SATMOLA - ${isMaster ? 'Master Report' : 'Daily Stock Report'}</div>`;
+            const body = source.cloneNode(true);
+            body.querySelectorAll('.no-export').forEach(el => el.remove());
+            clone.appendChild(body);
+            document.body.appendChild(clone);
+
+            window.print();
+            // Some phones never fire "afterprint"; the copy is hidden on screen anyway.
+        }
+
+        // ---- JPG: snapshot a full-size copy so wide tables are not cut off ----
+        function exportToJPG(mode = 'ACTIVE') {
+            const isMaster = mode === 'MASTER';
+            const source = isMaster ? getMasterVisiblePane() : document.getElementById('print-area');
+
+            showToast("Generating JPG snapshot...", "info");
+
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:fixed;left:-20000px;top:0;width:max-content;max-width:none;background:#ffffff;padding:12px;';
+            const copy = source.cloneNode(true);
+            copy.querySelectorAll('.no-export').forEach(el => el.remove());
+            copy.querySelectorAll('.overflow-x-auto, .overflow-auto').forEach(el => {
+                el.style.overflow = 'visible';
+            });
+            wrap.appendChild(copy);
+            document.body.appendChild(wrap);
+
+            html2canvas(wrap, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+                const a = document.createElement('a');
+                const dk = isMaster ? masterDateKey : currentDateKey;
+                a.download = `Satmola_${isMaster ? 'Master' : 'Active'}_Report_${fileDate(dk)}.jpg`;
+                a.href = canvas.toDataURL("image/jpeg", 0.95);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast("JPG image saved! Ready for WhatsApp sharing.", "success");
+            }).catch(err => {
+                console.error(err);
+                showToast("Failed to generate image snapshot.", "error");
+            }).finally(() => {
+                wrap.remove();
+            });
+        }
+
+        function exportToDoc(mode = 'ACTIVE') {
+            const isMaster = mode === 'MASTER';
+            const tableEl = (isMaster ? getMasterVisibleTable() : document.getElementById('main-report-table')).cloneNode(true);
+            tableEl.querySelectorAll('.no-export').forEach(el => el.remove());
+            const tableHTML = tableEl.outerHTML;
+
+            const fullDoc = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset="utf-8"><title>Satmola Report</title>
+                <style>
+                    table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+                    th, td { border: 1px solid #000; padding: 6px; font-size: 10pt; }
+                    .excel-col-header { background-color: #E2EFDA; color: #375623; font-weight: bold; }
+                    .excel-header-date { text-align: center; font-weight: bold; font-size: 12pt; }
+                </style>
+                </head>
+                <body>
+                    ${tableHTML}
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob(['﻿', fullDoc], { type: 'application/msword' });
+            const dk = isMaster ? masterDateKey : currentDateKey;
+            triggerDownload(blob, `Satmola_${isMaster ? 'Master' : 'Active'}_Report_${fileDate(dk)}.doc`);
+
+            showToast("Word (.doc) document downloaded!", "success");
+        }
+
+        // -------------------------------------------------------------
+        // 12. TOAST NOTIFICATION UTILITY
+        // -------------------------------------------------------------
+        let toastTimer = null;
+        function showToast(msg, type = "info") {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastText.textContent = msg;
+
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === "error") {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-sky-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3200);
+        }
+
+        // -------------------------------------------------------------
+        // 12. LOGIN + SYNC TO THE PRODUCTION SHEET
+        // Uses the Satmola All login (same browser storage). Every saved entry waits in a queue
+        // until the server confirms it, so nothing is lost offline and nothing is saved twice.
+        // -------------------------------------------------------------
+        const SYNC_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfr0u2afdCCSPJQ61JgyLSTt4fk9SF9YjgXWTJDh2fNOZL2ITrIUbHT-YbNo2OrtuAcA/exec";
+        const SYNC_QUEUE_KEY = "SATMOLA_SYNC_QUEUE_V1";
+        let syncQueue = [];
+        let syncBusy = false;
+        let syncBlocked = false;     // true while the sign-in gate is showing
+        let syncTimer = null;
+
+        function lsGet(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+        function syncOwnerKey() {
+            let k = lsGet("satmola_owner");
+            try { k = k || sessionStorage.getItem("satmola_owner") || ""; } catch (e) {}
+            return k;
+        }
+        function syncToken() { return lsGet("satmola_token"); }
+        function syncWho() {
+            if (syncOwnerKey()) return "Owner";
+            try { const u = JSON.parse(lsGet("satmola_user") || "null"); if (u) return u.name || u.username || ""; } catch (e) {}
+            return "";
+        }
+        function syncDevice() {
+            const u = navigator.userAgent || "";
+            return /Android/i.test(u) ? "Android (stock page)" : /iPhone|iPad/i.test(u) ? "iPhone (stock page)" : "Browser (stock page)";
+        }
+        function syncPost(obj) {
+            obj.device = syncDevice();
+            return fetch(SYNC_SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(obj) })
+                .then(r => r.json())
+                .catch(() => ({ ok: false, offline: true, error: "Could not reach the server" }));
+        }
+        function syncAuth(obj) {
+            const own = syncOwnerKey();
+            if (own) obj.key = own; else obj.token = syncToken();
+            return obj;
+        }
+        function syncLoadQueue() {
+            try { const q = JSON.parse(lsGet(SYNC_QUEUE_KEY) || "[]"); syncQueue = Array.isArray(q) ? q : []; } catch (e) { syncQueue = []; }
+        }
+        function syncSaveQueue() {
+            try { localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(syncQueue)); } catch (e) {}
+        }
+        function syncPill() {
+            const el = document.getElementById('sync-pill');
+            if (!el) return;
+            const who = syncWho();
+            if (!who) { el.style.display = 'none'; return; }
+            const n = syncQueue.length;
+            el.style.display = 'block';
+            el.style.background = n ? '#fef3c7' : '#dcfce7';
+            el.style.color = n ? '#92400e' : '#166534';
+            el.textContent = (n ? n + ' waiting to sync' : 'Synced') + ' \u00b7 ' + who;
+        }
+        function showGate(title, text, showOpen) {
+            syncBlocked = true;
+            document.getElementById('gate-title').textContent = title;
+            document.getElementById('gate-text').textContent = text;
+            document.getElementById('gate-btn').style.display = showOpen === false ? 'none' : 'block';
+            document.getElementById('gate').style.display = 'flex';
+        }
+        function hideGate() {
+            syncBlocked = false;
+            document.getElementById('gate').style.display = 'none';
+        }
+        function stockSyncAdd(isoDate, head, name, qty) {
+            const id = 'E-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+            syncQueue.push({ id: id, date: isoDate, head: head, name: name, qty: qty });
+            syncSaveQueue();
+            syncPill();
+            syncFlush();
+        }
+        async function syncFlush() {
+            if (syncBusy || syncBlocked || !syncQueue.length) return;
+            if (!syncOwnerKey() && !syncToken()) { checkAccess(); return; }
+            syncBusy = true;
+            try {
+                // one request per date, up to 40 entries each
+                const first = syncQueue[0].date;
+                const batch = syncQueue.filter(e => e.date === first).slice(0, 40);
+                const res = await syncPost(syncAuth({ act: 'stock_save', date: first, entries: batch.map(e => ({ id: e.id, head: e.head, name: e.name, qty: e.qty })) }));
+                if (res.expired) { showGate('Please sign in again', 'Your login has expired. Sign in again in Satmola All.'); return; }
+                if (res.noaccess) { showGate('No access', 'The owner has not given you the Stock Logger app yet.', false); return; }
+                if (res.offline) { syncSchedule(20000); return; }
+                if (!res.ok || !Array.isArray(res.results)) {
+                    showToast(res.error || 'Sync failed. Will try again.', 'error');
+                    syncSchedule(30000);
+                    return;
+                }
+                const done = {};
+                let bad = 0;
+                res.results.forEach(r => { done[r.id] = 1; if (!r.ok) bad++; });
+                syncQueue = syncQueue.filter(e => !done[e.id]);
+                syncSaveQueue();
+                if (bad) showToast(bad + ' entry could not be saved to the sheet (check HEAD / name / quantity).', 'error');
+                if (syncQueue.length) syncSchedule(500);
+            } finally {
+                syncBusy = false;
+                syncPill();
+            }
+        }
+        function syncSchedule(ms) {
+            clearTimeout(syncTimer);
+            syncTimer = setTimeout(syncFlush, ms);
+        }
+        // Check the login and the Stock Logger permission
+        async function checkAccess() {
+            if (syncOwnerKey()) { hideGate(); syncPill(); syncFlush(); return; }
+            const tok = syncToken();
+            if (!tok) { showGate('Sign in required', 'Please sign in in Satmola All first, then open Stock Logger from there.'); return; }
+            const r = await syncPost({ act: 'me', token: tok });
+            if (r.offline) { hideGate(); syncPill(); return; }   // no internet: allow work, entries wait in the queue
+            if (r.expired || !r.ok) { showGate('Please sign in again', 'Your login has expired. Sign in again in Satmola All.'); return; }
+            const apps = (r.user && r.user.apps) || [];
+            if (apps.indexOf('stock') < 0) { showGate('No access', 'The owner has not given you the Stock Logger app yet.', false); return; }
+            hideGate(); syncPill(); syncFlush();
+        }
+        window.addEventListener('online', () => syncFlush());
+        window.addEventListener('focus', () => { if (syncBlocked) checkAccess(); else syncFlush(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) { if (syncBlocked) checkAccess(); else syncFlush(); } });
+        document.getElementById('gate-retry').addEventListener('click', checkAccess);
+        syncLoadQueue();
+        syncPill();
+        checkAccess();
+    </script>
+</body>
+</html>
